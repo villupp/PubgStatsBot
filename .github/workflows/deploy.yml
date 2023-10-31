@@ -21,7 +21,7 @@ name: Deploy .NET WebJob to Azure App Service
 
 env:
   WEBJOB_NAME: PubgStatsBotWorker
-  AZURE_APP_NAME: ofbot-app
+  AZURE_APP_NAME: pubgstatsbot-app
   PROJECT_ROOT: ./Villupp.PubgStatsBot/Villupp.PubgStatsBot.csproj
   DOTNET_VERSION: '6'
 
