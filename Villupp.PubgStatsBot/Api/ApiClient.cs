@@ -6,12 +6,12 @@ namespace Villupp.PubgStatsBot.Api
     public abstract class ApiClient
     {
         protected readonly ILogger<ApiClient> logger;
-        protected readonly BotSettings botSettings;
+        protected readonly PubgStatsBotSettings botSettings;
         protected readonly HttpClient httpClient;
 
         public ApiClient(
             ILogger<ApiClient> logger,
-            BotSettings botSettings,
+            PubgStatsBotSettings botSettings,
             HttpClient httpClient)
         {
             this.logger = logger;

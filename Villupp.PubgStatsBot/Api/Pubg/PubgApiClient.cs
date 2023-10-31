@@ -7,7 +7,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 {
     public class PubgApiClient : ApiClient
     {
-        public PubgApiClient(ILogger<ApiClient> logger, BotSettings botSettings, HttpClient httpClient) : base(logger, botSettings, httpClient)
+        public PubgApiClient(ILogger<ApiClient> logger, PubgStatsBotSettings botSettings, HttpClient httpClient) : base(logger, botSettings, httpClient)
         {
         }
 

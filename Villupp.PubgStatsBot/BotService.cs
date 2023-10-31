@@ -13,7 +13,7 @@ namespace Villupp.PubgStatsBot
     public sealed class BotService : IHostedService
     {
         private readonly ILogger logger;
-        private readonly BotSettings botSettings;
+        private readonly PubgStatsBotSettings botSettings;
         private readonly DiscordSocketClient discordSocketClient;
         private readonly CommandService commandService;
         private readonly InteractionService interactionService;
@@ -22,7 +22,7 @@ namespace Villupp.PubgStatsBot
         public BotService(
             ILogger<BotService> logger,
             IHostApplicationLifetime appLifetime,
-            BotSettings botSettings,
+            PubgStatsBotSettings botSettings,
             DiscordSocketClient discordSocketClient,
             CommandService commandService,
             InteractionService interactionService,

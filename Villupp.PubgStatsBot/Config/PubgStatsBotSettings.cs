@@ -1,6 +1,6 @@
 ﻿namespace Villupp.PubgStatsBot.Config
 {
-    public class BotSettings
+    public class PubgStatsBotSettings
     {
         public string BotToken { get; set; }
         public string StorageKey { get; set; }

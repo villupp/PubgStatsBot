@@ -1,5 +1,4 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Azure;
@@ -18,19 +17,18 @@ namespace Villupp.PubgStatsBot
 {
     internal class Program
     {
-        private static BotSettings botSettings;
+        private static PubgStatsBotSettings botSettings;
 
         private static void Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
             {
-                var settings = new BotSettings();
-                hostContext.Configuration.Bind(nameof(BotSettings), settings);
+                var settings = new PubgStatsBotSettings();
+                hostContext.Configuration.Bind(nameof(PubgStatsBotSettings), settings);
                 botSettings = settings;
 
                 var discordSocketConfig = new DiscordSocketConfig()
                 {
-                    //GatewayIntents = GatewayIntents.AllUnprivileged
                 };
 
                 var commandServiceConfig = new CommandServiceConfig()

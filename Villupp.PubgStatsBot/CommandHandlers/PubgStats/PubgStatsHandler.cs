@@ -16,7 +16,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         private PubgApiClient pubgClient;
         private TableStorageService<PubgSeason> seasonTableService;
         private TableStorageService<PubgPlayer> playerTableService;
-        private BotSettings botSettings;
+        private PubgStatsBotSettings botSettings;
 
         public List<PubgSeason> Seasons { get; set; }
 
@@ -24,7 +24,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             PubgApiClient pubgClient,
             TableStorageService<PubgSeason> seasonTableService,
             TableStorageService<PubgPlayer> playerTableService,
-            BotSettings botSettings
+            PubgStatsBotSettings botSettings
             )
         {
             this.logger = logger;

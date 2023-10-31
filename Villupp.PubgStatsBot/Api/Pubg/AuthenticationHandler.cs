@@ -6,10 +6,10 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 {
     public class AuthenticationHandler : DelegatingHandler
     {
-        private readonly BotSettings settings;
+        private readonly PubgStatsBotSettings settings;
         private readonly ILogger<AuthenticationHandler> logger;
 
-        public AuthenticationHandler(BotSettings settings, ILogger<AuthenticationHandler> logger)
+        public AuthenticationHandler(PubgStatsBotSettings settings, ILogger<AuthenticationHandler> logger)
         {
             this.logger = logger;
             this.settings = settings;
