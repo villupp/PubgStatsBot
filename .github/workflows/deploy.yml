@@ -49,9 +49,7 @@ jobs:
 
     - name: dotnet publish
       run: |
-        dotnet restore
-        dotnet build --configuration Release
-        dotnet publish -c Release -o './publish/App_Data/Jobs/Continuous/${{ env.WEBJOB_NAME }}' '${{ env.PROJECT_ROOT }}'
+        dotnet publish -r win-x64 --sc false -c Release -o './publish/App_Data/Jobs/Continuous/${{ env.WEBJOB_NAME }}' '${{ env.PROJECT_ROOT }}'
 
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
