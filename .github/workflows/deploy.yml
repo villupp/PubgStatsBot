@@ -22,7 +22,7 @@ name: Deploy .NET WebJob to Azure App Service
 env:
   WEBJOB_NAME: PubgStatsBotWorker
   AZURE_APP_NAME: pubgstatsbot-app
-  PROJECT_ROOT: ./Villupp.PubgStatsBot/Villupp.PubgStatsBot.csproj
+  PROJECT_ROOT: ./Villupp.PubgStatsBot
   DOTNET_VERSION: '6'
 
 on:
@@ -49,6 +49,8 @@ jobs:
 
     - name: dotnet publish
       run: |
+        dotnet restore
+        dotnet build --configuration Release
         dotnet publish -c Release -o './publish/App_Data/Jobs/Continuous/${{ env.WEBJOB_NAME }}' ${{ env.PROJECT_ROOT }}
 
     - name: Deploy to Azure App Service
