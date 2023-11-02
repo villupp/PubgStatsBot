@@ -10,6 +10,7 @@ namespace OfBot.TableStorage.Models
         public DateTimeOffset? Timestamp { get; set; }
         public ETag ETag { get; set; }
         public string Name { get; set; }
+        public string DisplayName { get; set; }
         public string Id { get; set; }
     }
 }
