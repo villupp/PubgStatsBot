@@ -40,7 +40,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         {
             var statsStr = "";
             var seasonNumber = season.Id.Replace(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC, "");
-            var titleText = $"PUBG ranked season {seasonNumber} squad FPP stats for player {player.Name}";
+            var titleText = $"PUBG ranked season {seasonNumber} squad FPP stats for player {(string.IsNullOrEmpty(player.DisplayName) ? player.Name : player.DisplayName)}";
             var pubgOpGgUrl = $"https://pubg.op.gg/user/{player.Name}";
 
             if (rankedStats?.Attributes?.Stats?.SquadFpp == null)
@@ -154,7 +154,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task<PubgPlayer> GetPlayer(string playerName)
         {
-            var players = await playerTableService.Get(p => p.Name == playerName);
+            var players = await playerTableService.Get(p => p.Name == playerName.ToLower());
 
             if (players != null && players.Count > 0)
                 return players[0];
@@ -170,7 +170,8 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 RowKey = Guid.NewGuid().ToString(),
                 PartitionKey = "",
                 Id = player.Id,
-                Name = player.Attributes.Name
+                Name = player.Attributes.Name.ToLower(),
+                DisplayName = player.Attributes.Name
             };
 
             await playerTableService.Add(pubgPlayer);
