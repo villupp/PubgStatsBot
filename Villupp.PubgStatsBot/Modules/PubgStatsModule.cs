@@ -24,31 +24,37 @@ namespace Villupp.PubgStatsBot.Modules
 
             if (string.IsNullOrEmpty(playername))
             {
-                await RespondAsync($"Provide a player name.", ephemeral: true);
+                await RespondAsync("Provide a player name.", ephemeral: true);
                 return;
             }
+
+            await RespondAsync($"Retrieving stats for {playername} ...", ephemeral: !ispublic);
 
             var player = await pubgStatsHandler.GetPlayer(playername);
             var statsSeason = await pubgStatsHandler.GetSeason(season);
 
             if (player == null)
             {
-                logger.LogInformation($"Could not retrieve player. Stats not posted.");
-                await RespondAsync($"Player not found.", ephemeral: true);
+                logger.LogInformation("Could not retrieve player. Stats not posted.");
+                await ModifyOriginalResponseAsync((msg) => msg.Content = "Player not found.");
                 return;
             }
 
             if (statsSeason == null)
             {
-                logger.LogInformation($"Could not retrieve season. Stats not posted.");
-                await RespondAsync($"Ranked season not found. There might be an issue. Use `refreshseasons` command to refresh season cache.", ephemeral: true);
+                logger.LogInformation("Could not retrieve season. Stats not posted.");
+                await ModifyOriginalResponseAsync((msg) => msg.Content = "Ranked season not found. There might be an issue. Use `refreshseasons` command to refresh season cache.");
                 return;
             }
 
             var seasonStats = await pubgStatsHandler.GetRankedStats(player, statsSeason);
             var embed = pubgStatsHandler.CreateStatsEmded(player, statsSeason, seasonStats);
 
-            await RespondAsync(null, embed: embed, ephemeral: !ispublic);
+            await ModifyOriginalResponseAsync((msg) => 
+            {
+                msg.Content = null;
+                msg.Embed = embed;
+            });
         }
 
         // Refreshes season cache
