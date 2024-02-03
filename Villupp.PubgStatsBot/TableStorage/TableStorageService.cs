@@ -18,6 +18,7 @@ namespace Villupp.PubgStatsBot.TableStorage
             // Create TableStorage tables if they do not exist
             tableServiceClient.CreateTableIfNotExists("trackedDotaPlayer");
             tableServiceClient.CreateTableIfNotExists("command");
+            tableServiceClient.CreateTableIfNotExists("pubgLeaderboardPlayer");
         }
 
         public async Task<List<T>> Get(Expression<Func<T, bool>> query)

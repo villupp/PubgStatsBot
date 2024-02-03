@@ -1,10 +1,12 @@
 ﻿using Discord;
 using Microsoft.Extensions.Logging;
-using OfBot.TableStorage.Models;
+using System.Numerics;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.Api.Pubg.Models;
 using Villupp.PubgStatsBot.Config;
 using Villupp.PubgStatsBot.TableStorage;
+using Villupp.PubgStatsBot.TableStorage.Models;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 {
@@ -16,6 +18,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         private PubgApiClient pubgClient;
         private TableStorageService<PubgSeason> seasonTableService;
         private TableStorageService<PubgPlayer> playerTableService;
+        private TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService;
         private PubgStatsBotSettings botSettings;
 
         public List<PubgSeason> Seasons { get; set; }
@@ -24,6 +27,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             PubgApiClient pubgClient,
             TableStorageService<PubgSeason> seasonTableService,
             TableStorageService<PubgPlayer> playerTableService,
+            TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService,
             PubgStatsBotSettings botSettings
             )
         {
@@ -32,11 +36,12 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             this.seasonTableService = seasonTableService;
             this.playerTableService = playerTableService;
             this.botSettings = botSettings;
+            this.lbPlayerTableService = lbPlayerTableService;
 
             PopulateSeasons().Wait();
         }
 
-        public Embed CreateStatsEmded(PubgPlayer player, PubgSeason season, RankedStats rankedStats)
+        public Embed CreateStatsEmded(PubgPlayer player, PubgLeaderboardPlayer lbPlayer, PubgSeason season, RankedStats rankedStats)
         {
             var statsStr = "";
             var seasonNumber = season.Id.Replace(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC, "");
@@ -77,6 +82,10 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             }
 
             statsStr += $"Rank: **{stats.CurrentTier?.Tier}{subTierStr}**{bestTierStr}";
+
+            if (lbPlayer != null)
+                statsStr += $"\nEU leaderboard rank: **#{lbPlayer.Rank}**";
+
             statsStr += $"\nRP: **{stats.CurrentRankPoint}** (season high: **{stats.BestRankPoint}**)";
             statsStr += $"\nMatches: **{stats.RoundsPlayed}** Wins: **{stats.Wins}** (**{string.Format("{0:0.0#}", stats.WinRatio * 100)}%**)";
             statsStr += $"\nAvg placement: **#{string.Format("{0:0.0#}", stats.AvgRank)}** Top 10: **{string.Format("{0:0.0#}", stats.Top10Ratio * 100)}%**";
@@ -176,6 +185,12 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
             await playerTableService.Add(pubgPlayer);
             return pubgPlayer;
+        }
+
+        public async Task<PubgLeaderboardPlayer> GetLeaderboardPlayer(string playerName, string season)
+        {
+            var lbPlayers = await lbPlayerTableService.Get(p => p.Name == playerName && p.Season == season);
+            return lbPlayers.Count > 0 ? lbPlayers[0] : null;
         }
 
         public async Task<PubgSeason> GetSeason(int seasonNumber = -1)

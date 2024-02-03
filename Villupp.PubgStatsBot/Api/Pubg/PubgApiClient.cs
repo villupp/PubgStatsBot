@@ -15,7 +15,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
         {
             logger.LogInformation($"Getting match {matchId}");
 
-            var reqUri = $"matches/{matchId}";
+            var reqUri = $"shards/steam/matches/{matchId}";
 
             var httpResponse = await httpClient.GetAsync(reqUri);
 
@@ -39,7 +39,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
         public async Task<List<Player>> GetPlayers(List<string> playerNames)
         {
             var playerNamesStr = string.Join(',', playerNames);
-            var reqUri = $"players?filter[playerNames]={playerNamesStr}";
+            var reqUri = $"shards/steam/players?filter[playerNames]={playerNamesStr}";
             var httpResponse = await httpClient.GetAsync(reqUri);
 
             if (!httpResponse.IsSuccessStatusCode)
@@ -71,7 +71,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
         {
             logger.LogInformation($"GetSeasons");
 
-            var reqUri = $"seasons";
+            var reqUri = $"shards/steam/seasons";
             var httpResponse = await httpClient.GetAsync(reqUri);
 
             if (!httpResponse.IsSuccessStatusCode)
@@ -100,7 +100,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
                 return null;
             }
 
-            var reqUri = $"players/{playerId}/seasons/{seasonId}/ranked";
+            var reqUri = $"shards/steam/players/{playerId}/seasons/{seasonId}/ranked";
             var httpResponse = await httpClient.GetAsync(reqUri);
 
             if (!httpResponse.IsSuccessStatusCode)
@@ -116,6 +116,28 @@ namespace Villupp.PubgStatsBot.Api.Pubg
             var rankedStatsRes = await httpResponse.Content.ReadFromJsonAsync<RankedStatsResponse>();
 
             return rankedStatsRes.Stats;
+        }
+
+        public async Task<List<Included>> GetLeaderboardPlayers(string season)
+        {
+            logger.LogInformation($"GetLeaderboard season {season}");
+
+            var reqUri = $"shards/pc-eu/leaderboards/{season}/squad-fpp";
+            var httpResponse = await httpClient.GetAsync(reqUri);
+
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                if (httpResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    return null;
+
+                LogHttpFailure(httpResponse);
+
+                throw new HttpRequestException();
+            }
+
+            var lbRes = await httpResponse.Content.ReadFromJsonAsync<LeaderboardResponse>();
+
+            return lbRes.included;
         }
     }
 }

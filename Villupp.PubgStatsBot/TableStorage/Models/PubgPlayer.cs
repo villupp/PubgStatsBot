@@ -1,7 +1,7 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 
-namespace OfBot.TableStorage.Models
+namespace Villupp.PubgStatsBot.TableStorage.Models
 {
     public class PubgPlayer : ITableEntity
     {

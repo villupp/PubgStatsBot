@@ -6,12 +6,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using OfBot.TableStorage.Models;
 using System.Net;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.CommandHandlers.PubgStats;
 using Villupp.PubgStatsBot.Config;
+using Villupp.PubgStatsBot.PubgLeaderboards;
 using Villupp.PubgStatsBot.TableStorage;
+using Villupp.PubgStatsBot.TableStorage.Models;
+using Villupp.PubgStatsBot.TableStorage.Repositories;
 
 namespace Villupp.PubgStatsBot
 {
@@ -59,7 +61,10 @@ namespace Villupp.PubgStatsBot
                 services.AddSingleton<InteractionService>();
                 services.AddSingleton<TableStorageService<PubgSeason>>();
                 services.AddSingleton<TableStorageService<PubgPlayer>>();
+                services.AddSingleton<TableStorageService<PubgLeaderboardPlayer>>();
+                services.AddSingleton<PubgSeasonRepository>();
                 services.AddSingleton<PubgStatsHandler>();
+                services.AddSingleton<PubgLeaderboardPoller>();
                 services.AddSingleton<AuthenticationHandler>();
 
                 services.AddHttpClient<PubgApiClient>(client => { client.BaseAddress = new Uri(botSettings.PubgApiBaseUrl); })

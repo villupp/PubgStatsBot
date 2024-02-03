@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using Villupp.PubgStatsBot.Config;
+using Villupp.PubgStatsBot.PubgLeaderboards;
 
 namespace Villupp.PubgStatsBot
 {
@@ -18,6 +19,7 @@ namespace Villupp.PubgStatsBot
         private readonly CommandService commandService;
         private readonly InteractionService interactionService;
         private readonly IServiceProvider serviceProvider;
+        private readonly PubgLeaderboardPoller pubgLeaderboardPoller;
 
         public BotService(
             ILogger<BotService> logger,
@@ -26,7 +28,8 @@ namespace Villupp.PubgStatsBot
             DiscordSocketClient discordSocketClient,
             CommandService commandService,
             InteractionService interactionService,
-            IServiceProvider serviceProvider
+            IServiceProvider serviceProvider,
+            PubgLeaderboardPoller pubgLeaderboardPoller
             )
         {
             appLifetime.ApplicationStarted.Register(OnStarted);
@@ -39,6 +42,7 @@ namespace Villupp.PubgStatsBot
             this.commandService = commandService;
             this.interactionService = interactionService;
             this.serviceProvider = serviceProvider;
+            this.pubgLeaderboardPoller = pubgLeaderboardPoller;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -86,6 +90,12 @@ namespace Villupp.PubgStatsBot
                 catch (HttpException ex)
                 {
                     logger.LogError($"Error while creating slash commands: {ex}");
+                }
+
+                if (botSettings.PubgLeaderboardPollerIsEnabled)
+                {
+                    logger.LogInformation("Starting PUBG leaderboard polling service");
+                    _ = pubgLeaderboardPoller.Start().ConfigureAwait(false);
                 }
             };
 

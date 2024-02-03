@@ -48,9 +48,10 @@ namespace Villupp.PubgStatsBot.Modules
             }
 
             var seasonStats = await pubgStatsHandler.GetRankedStats(player, statsSeason);
-            var embed = pubgStatsHandler.CreateStatsEmded(player, statsSeason, seasonStats);
+            var lbPlayer = await pubgStatsHandler.GetLeaderboardPlayer(player.DisplayName, statsSeason.Id);
+            var embed = pubgStatsHandler.CreateStatsEmded(player, lbPlayer, statsSeason, seasonStats);
 
-            await ModifyOriginalResponseAsync((msg) => 
+            await ModifyOriginalResponseAsync((msg) =>
             {
                 msg.Content = null;
                 msg.Embed = embed;
