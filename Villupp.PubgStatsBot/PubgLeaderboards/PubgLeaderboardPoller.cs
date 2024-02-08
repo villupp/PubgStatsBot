@@ -108,9 +108,11 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                     KdaRatio = lbPlayer?.attributes?.stats?.kda,
                     //KdRatio = lbPlayer?.attributes?.stats?.killDeathRatio,
                     GameCount = lbPlayer?.attributes?.stats?.games,
-                    WinCount = lbPlayer?.attributes?.stats?.games,
+                    WinCount = lbPlayer?.attributes?.stats?.wins,
                     Rp = lbPlayer?.attributes?.stats?.rankPoints,
-                    //WinRatio = lbPlayer?.attributes?.stats?.winRatio,
+                    //WinRatio = lbPlayer?.attributes?.stats?.winRatio
+                    Tier = lbPlayer?.attributes?.stats?.tier,
+                    SubTier = lbPlayer?.attributes?.stats?.subTier,
                 };
 
                 lbPlayerToAdd.WinRatio = lbPlayerToAdd.WinCount / lbPlayerToAdd.GameCount;
