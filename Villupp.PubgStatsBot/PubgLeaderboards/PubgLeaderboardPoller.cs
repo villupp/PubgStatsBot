@@ -115,7 +115,7 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                     SubTier = lbPlayer?.attributes?.stats?.subTier,
                 };
 
-                lbPlayerToAdd.WinRatio = lbPlayerToAdd.WinCount / lbPlayerToAdd.GameCount;
+                lbPlayerToAdd.WinRatio = lbPlayerToAdd.WinCount == 0 ? 0 : lbPlayerToAdd.WinCount / lbPlayerToAdd.GameCount;
 
                 addTasks.Add(lbPlayerTableService.Add(lbPlayerToAdd));
             }
