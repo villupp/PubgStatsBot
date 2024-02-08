@@ -54,15 +54,15 @@
 
     public class Stats
     {
-        public int rankPoints { get; set; }
-        public int wins { get; set; }
-        public int games { get; set; }
-        public int winRatio { get; set; }
-        public int averageDamage { get; set; }
-        public int kills { get; set; }
-        public int killDeathRatio { get; set; }
-        public double kda { get; set; }
-        public double averageRank { get; set; }
+        public int? rankPoints { get; set; }
+        public int? wins { get; set; }
+        public int? games { get; set; }
+        public decimal? winRatio { get; set; }
+        public decimal? averageDamage { get; set; }
+        public int? kills { get; set; }
+        public decimal? killDeathRatio { get; set; }
+        public decimal? kda { get; set; }
+        public decimal? averageRank { get; set; }
         public string tier { get; set; }
         public string subTier { get; set; }
     }

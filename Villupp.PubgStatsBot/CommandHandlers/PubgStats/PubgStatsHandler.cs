@@ -1,12 +1,11 @@
 ﻿using Discord;
 using Microsoft.Extensions.Logging;
-using System.Numerics;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.Api.Pubg.Models;
+using Villupp.PubgStatsBot.Common;
 using Villupp.PubgStatsBot.Config;
 using Villupp.PubgStatsBot.TableStorage;
 using Villupp.PubgStatsBot.TableStorage.Models;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 {
@@ -73,12 +72,12 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             var bestTierStr = "";
 
             if (stats.BestTier.Tier != RANKTIER_NAME_MASTER)
-                bestSubTierStr = $" {GetSubTierRomanNumeral(stats.BestTier?.SubTier)}";
+                bestSubTierStr = $" {PubgRankHelpers.GetSubTierRomanNumeral(stats.BestTier?.SubTier)}";
 
             if (stats.CurrentTier.Tier != RANKTIER_NAME_MASTER)
             {
                 bestTierStr = $" (season high: **{stats.BestTier?.Tier}{bestSubTierStr}**)";
-                subTierStr = $" {GetSubTierRomanNumeral(stats.CurrentTier?.SubTier)}";
+                subTierStr = $" {PubgRankHelpers.GetSubTierRomanNumeral(stats.CurrentTier?.SubTier)}";
             }
 
             statsStr += $"Rank: **{stats.CurrentTier?.Tier}{subTierStr}**{bestTierStr}";
@@ -100,19 +99,6 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                  ;
 
             return embedBuilder.Build();
-        }
-
-        private static string GetSubTierRomanNumeral(string subTier)
-        {
-            return subTier switch
-            {
-                "1" => "I",
-                "2" => "II",
-                "3" => "III",
-                "4" => "IV",
-                "5" => "V",
-                _ => "",
-            };
         }
 
         private string GetRankThumbnailUrl(RankTier rankTier)

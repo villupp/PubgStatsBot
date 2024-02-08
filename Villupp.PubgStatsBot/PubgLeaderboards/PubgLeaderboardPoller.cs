@@ -56,7 +56,9 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                 try
                 {
                     logger.LogDebug("Polling for PUBG leaderboards");
-                    await UpdateLeaderboards();
+
+                    var currentSeason = await seasonRepository.GetCurrentSeason();
+                    await UpdateLeaderboards(currentSeason.Id);
                 }
                 catch (Exception ex)
                 {
@@ -65,17 +67,18 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
             } while (await timer.WaitForNextTickAsync());
         }
 
-        private async Task UpdateLeaderboards()
+        private async Task UpdateLeaderboards(string seasonId)
         {
-            var currentSeason = await seasonRepository.GetCurrentSeason();
+            logger.LogInformation($"UpdateLeaderboards season {seasonId}");
 
-            logger.LogInformation($"UpdateLeaderboards season {currentSeason}");
+            var seasonLbPlayers = await pubgClient.GetLeaderboardPlayers(seasonId);
 
-            var currentSeasonLbPlayers = await pubgClient.GetLeaderboardPlayers(currentSeason.Id);
+            if (seasonLbPlayers == null || seasonLbPlayers.Count == 0)
+                return;
 
-            logger.LogInformation($"Got {currentSeasonLbPlayers.Count} season {currentSeason} leaderboard players");
+            logger.LogInformation($"Got {seasonLbPlayers.Count} season {seasonId} leaderboard players");
 
-            var lbPlayersToDelete = await lbPlayerTableService.Get(p => p.Season == currentSeason.Id);
+            var lbPlayersToDelete = await lbPlayerTableService.Get(p => p.Season == seasonId);
             var deleteTasks = new List<Task>();
 
             foreach (var lbPlayerToDelete in lbPlayersToDelete)
@@ -87,28 +90,39 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
             var addTasks = new List<Task>();
 
             logger.LogInformation($"Deleted {lbPlayersToDelete.Count} current season leaderboard players");
-            logger.LogInformation($"Adding {currentSeasonLbPlayers.Count} current season leaderboard players");
+            logger.LogInformation($"Adding {seasonLbPlayers.Count} current season leaderboard players");
 
-            foreach (var lbPlayer in currentSeasonLbPlayers)
+            foreach (var lbPlayer in seasonLbPlayers)
             {
                 var now = DateTime.UtcNow;
-                addTasks.Add(lbPlayerTableService.Add(new PubgLeaderboardPlayer()
+                var lbPlayerToAdd = new PubgLeaderboardPlayer()
                 {
                     RowKey = Guid.NewGuid().ToString(),
                     PartitionKey = "",
                     Name = lbPlayer?.attributes?.name,
                     Id = lbPlayer.id,
                     Rank = lbPlayer.attributes.rank,
-                    Season = currentSeason.Id,
-                    Timestamp = now
-                }));
+                    Season = seasonId,
+                    Timestamp = now,
+                    AvgDamage = lbPlayer?.attributes?.stats?.averageDamage,
+                    KdaRatio = lbPlayer?.attributes?.stats?.kda,
+                    //KdRatio = lbPlayer?.attributes?.stats?.killDeathRatio,
+                    GameCount = lbPlayer?.attributes?.stats?.games,
+                    WinCount = lbPlayer?.attributes?.stats?.games,
+                    Rp = lbPlayer?.attributes?.stats?.rankPoints,
+                    //WinRatio = lbPlayer?.attributes?.stats?.winRatio,
+                };
+
+                lbPlayerToAdd.WinRatio = lbPlayerToAdd.WinCount / lbPlayerToAdd.GameCount;
+
+                addTasks.Add(lbPlayerTableService.Add(lbPlayerToAdd));
             }
 
             Task.WaitAll(addTasks.ToArray());
 
-            logger.LogInformation($"Added {currentSeasonLbPlayers.Count} current season leaderboard players");
+            logger.LogInformation($"Added {seasonLbPlayers.Count} current season leaderboard players");
 
-            foreach (var player in currentSeasonLbPlayers)
+            foreach (var player in seasonLbPlayers)
             {
                 var playerName = player.attributes.name;
 
@@ -132,7 +146,7 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                 logger.LogInformation($"Added {playerName} to storage");
             }
 
-            logger.LogInformation($"UpdateLeaderboards season {currentSeason} done.");
+            logger.LogInformation($"UpdateLeaderboards season {seasonId} done.");
         }
     }
 }
