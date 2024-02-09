@@ -21,7 +21,17 @@ namespace Villupp.PubgStatsBot.TableStorage.Repositories
         {
             var seasons = await Get();
 
-            return seasons.Where(s => s.IsCurrentSeason && s.Id.StartsWith(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC)).FirstOrDefault();
+            return seasons.SingleOrDefault(s => s.IsCurrentSeason && s.Id.StartsWith(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC));
+        }
+
+        public async Task<PubgSeason> GetSeason(int seasonNumber)
+        {
+            if (seasonNumber == -1)
+                return await GetCurrentSeason();
+
+            var seasons = await Get();
+
+            return seasons.SingleOrDefault(s => s.Id == $"{SEASONID_PREFIX_RANKED_SQUAD_FPP_PC}{seasonNumber}");
         }
     }
 }

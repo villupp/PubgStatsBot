@@ -6,6 +6,7 @@ using Villupp.PubgStatsBot.Common;
 using Villupp.PubgStatsBot.Config;
 using Villupp.PubgStatsBot.TableStorage;
 using Villupp.PubgStatsBot.TableStorage.Models;
+using Villupp.PubgStatsBot.TableStorage.Repositories;
 
 namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 {
@@ -15,32 +16,31 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         private const string RANKTIER_NAME_MASTER = "Master";
         private ILogger logger;
         private PubgApiClient pubgClient;
-        private TableStorageService<PubgSeason> seasonTableService;
+        private PubgSeasonRepository seasonRepository;
         private TableStorageService<PubgPlayer> playerTableService;
         private TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService;
+        private TableStorageService<PubgSeason> seasonTableService;
         private PubgStatsBotSettings botSettings;
-
-        public List<PubgSeason> Seasons { get; set; }
 
         public PubgStatsHandler(ILogger<PubgStatsHandler> logger,
             PubgApiClient pubgClient,
-            TableStorageService<PubgSeason> seasonTableService,
+            PubgSeasonRepository seasonRepository,
             TableStorageService<PubgPlayer> playerTableService,
             TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService,
+            TableStorageService<PubgSeason> seasonTableService,
             PubgStatsBotSettings botSettings
             )
         {
             this.logger = logger;
             this.pubgClient = pubgClient;
-            this.seasonTableService = seasonTableService;
+            this.seasonRepository = seasonRepository;
             this.playerTableService = playerTableService;
             this.botSettings = botSettings;
             this.lbPlayerTableService = lbPlayerTableService;
-
-            PopulateSeasons().Wait();
+            this.seasonTableService = seasonTableService;
         }
 
-        public Embed CreateStatsEmded(PubgPlayer player, PubgLeaderboardPlayer lbPlayer, PubgSeason season, RankedStats rankedStats)
+        public Embed CreatePlayerSeasonStatsEmbed(PubgPlayer player, PubgLeaderboardPlayer lbPlayer, PubgSeason season, RankedStats rankedStats)
         {
             var statsStr = "";
             var seasonNumber = season.Id.Replace(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC, "");
@@ -101,6 +101,42 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             return embedBuilder.Build();
         }
 
+        public Embed CreateLeaderboardEmded(PubgSeason season, List<PubgLeaderboardPlayer> lbPlayers)
+        {
+            var leaderboardStr = "";
+            var seasonNumber = season.Id.Replace(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC, "");
+            var titleText = $"PUBG ranked season {seasonNumber} top {lbPlayers.Count}";
+
+            lbPlayers = lbPlayers.OrderBy(p => p.Rank).ToList();
+
+            for (var i = 0; i < lbPlayers.Count; i++)
+            {
+                var lbPlayer = lbPlayers[i];
+                // Sub tier not shown for master
+                var subTierStr = $"";
+
+                if (lbPlayer.Tier != RANKTIER_NAME_MASTER)
+                    subTierStr = $" {PubgRankHelpers.GetSubTierRomanNumeral(lbPlayer.SubTier)}";
+
+                leaderboardStr += $"\n **#{lbPlayer.Rank}** **[{lbPlayer.Name}](https://pubg.op.gg/user/{lbPlayer.Name})**" +
+                        $" [**{lbPlayer.Tier}{subTierStr}**]" +
+                        $" [RP: **{lbPlayer.Rp}**]" +
+                        $" [Matches: **{lbPlayer.GameCount}**]" +
+                        //$" [Wins: **{lbPlayer.WinCount}** (**{string.Format("{0:0.0#}", lbPlayer.WinRatio * 100)}%**)]" +
+                        $" [Avg dmg: **{lbPlayer.AvgDamage.Value}**]" +
+                        //$" [KDA: **{string.Format("{0:0.0#}", lbPlayer.KdaRatio)}**]" +
+                        "";
+            }
+
+            var embedBuilder = new EmbedBuilder()
+                 .WithTitle(titleText)
+                 .WithDescription(leaderboardStr)
+                 .WithColor(Color.Blue)
+                 ;
+
+            return embedBuilder.Build();
+        }
+
         private string GetRankThumbnailUrl(RankTier rankTier)
         {
             //https://opgg-pubg-static.akamaized.net/images/tier/competitive/Platinum-5.png
@@ -111,11 +147,6 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 return "";
 
             return botSettings.PubgStatsRankImageTemplateUrl.Replace("{RANK}", $"{rankTier.Tier}-{rankTier.SubTier}");
-        }
-
-        private async Task PopulateSeasons()
-        {
-            Seasons = await seasonTableService.Get();
         }
 
         public async Task<bool> RefreshSeasonCache()
@@ -143,7 +174,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 });
             }
 
-            await PopulateSeasons();
+            seasonRepository.FlushCache();
             return true;
         }
 
@@ -179,16 +210,15 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             return lbPlayers.Count > 0 ? lbPlayers[0] : null;
         }
 
-        public async Task<PubgSeason> GetSeason(int seasonNumber = -1)
+        public async Task<List<PubgLeaderboardPlayer>> GetLeaderboardPlayers(string season, int count = 500)
         {
-            if (Seasons == null || Seasons.Count == 0)
-                await PopulateSeasons();
+            if (count > 500)
+            {
+                logger.LogWarning($"Tried to query for nore than 500 leaderboard players..");
+                count = 500;
+            }
 
-            if (seasonNumber == -1)
-                // Current season
-                return Seasons.Where(s => s.IsCurrentSeason && s.Id.StartsWith(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC)).FirstOrDefault();
-            else
-                return Seasons.Where(s => s.Id == $"{SEASONID_PREFIX_RANKED_SQUAD_FPP_PC}{seasonNumber}").FirstOrDefault();
+            return await lbPlayerTableService.Get(p => p.Season == season && p.Rank <= count);
         }
 
         public async Task<RankedStats> GetRankedStats(PubgPlayer player, PubgSeason season)

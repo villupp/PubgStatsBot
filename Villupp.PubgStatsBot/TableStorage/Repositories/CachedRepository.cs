@@ -57,6 +57,11 @@ namespace Villupp.PubgStatsBot.TableStorage.Repositories
             }
         }
 
+        public void FlushCache()
+        {
+            memoryCache.Remove(cacheKey);
+        }
+
         private async Task UpdateCache(List<T> allRecords)
         {
             logger.LogDebug($"{GetType()} updated cache with {allRecords.Count} items");

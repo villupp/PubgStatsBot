@@ -17,7 +17,7 @@ namespace Villupp.PubgStatsBot.TableStorage.Models
         public int? GameCount { get; set; }
         public int? WinCount { get; set; }
         public decimal? WinRatio { get; set; }
-        public decimal? AvgDamage { get; set; }
+        public int? AvgDamage { get; set; }
         //public decimal? KdRatio { get; set; }
         public decimal? KdaRatio { get; set; }
         public string Tier { get; set; }

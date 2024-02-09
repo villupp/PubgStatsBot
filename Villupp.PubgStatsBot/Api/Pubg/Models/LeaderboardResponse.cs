@@ -58,7 +58,7 @@
         public int? wins { get; set; }
         public int? games { get; set; }
         public decimal? winRatio { get; set; }
-        public decimal? averageDamage { get; set; }
+        public int? averageDamage { get; set; }
         public int? kills { get; set; }
         public decimal? killDeathRatio { get; set; }
         public decimal? kda { get; set; }
