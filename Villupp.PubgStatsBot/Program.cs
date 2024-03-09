@@ -77,9 +77,12 @@ namespace Villupp.PubgStatsBot
             })
             .ConfigureLogging((context, builder) =>
             {
-#if !DEBUG
-                builder.AddApplicationInsights();
-#endif
+                builder.ClearProviders();
+                builder.AddConsole();
+                if (!string.IsNullOrEmpty(botSettings.AppInsightsConnectionString))
+                    builder.AddApplicationInsights(
+                        configureTelemetryConfiguration: (config) => config.ConnectionString = botSettings.AppInsightsConnectionString, 
+                        configureApplicationInsightsLoggerOptions: (config) => { });
             })
             .Build();
 

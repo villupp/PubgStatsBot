@@ -2,6 +2,7 @@
 {
     public class PubgStatsBotSettings
     {
+        public string AppInsightsConnectionString { get; set; } = null;
         public string BotToken { get; set; }
         public string StorageKey { get; set; }
         public string ApplicationInsightsKey { get; set; }
