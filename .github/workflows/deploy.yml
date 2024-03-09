@@ -23,7 +23,7 @@ env:
   WEBJOB_NAME: PubgStatsBotWorker
   AZURE_APP_NAME: pubgstatsbot-app
   PROJECT_ROOT: ./Villupp.PubgStatsBot
-  DOTNET_VERSION: '6'
+  DOTNET_VERSION: '8'
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
 
     - name: dotnet publish
       run: |
