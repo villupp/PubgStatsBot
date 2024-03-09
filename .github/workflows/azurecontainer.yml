@@ -25,7 +25,7 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and Push to ACR
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           push: true
           tags: villuppacr.azurecr.io/villupp-pubgstatsbot:latest,villuppacr.azurecr.io/villupp-pubgstatsbot:${{ github.sha }}
