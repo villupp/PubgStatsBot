@@ -34,3 +34,15 @@ To see logs, connect to the container:
 Stop container:
 
 `docker stop pubgstatsbot-container`
+
+# To maintain Azure Container App
+
+## Set environment variables
+
+Environment variable names can't contain colons `:`. Replace these with double underscore `__`.
+
+Update with Azure CLI with `az containerapp update`, for example:
+
+`az containerapp update -n vp-pubgstatsbot-ca -g vp-discordbots-rg --set-env-vars Logging__LogLevel__Azure.Core=Warning Logging__LogLevel__System.Net.Http=Warning`
+
+To refer a secret, use `envvar=secretref:secretname`
