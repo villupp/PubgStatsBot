@@ -47,7 +47,7 @@ namespace Villupp.PubgStatsBot
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            logger.LogInformation("StartAsync");
+            logger.LogInformation($"{GetType()}.StartAsync");
 
             discordSocketClient.Log += WriteDiscordLogMessage;
 
