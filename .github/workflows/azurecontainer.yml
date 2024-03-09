@@ -28,5 +28,18 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: villuppacr.azurecr.io/villupp-pubgstatsbot:latest
+          tags: villuppacr.azurecr.io/villupp-pubgstatsbot:latest,villuppacr.azurecr.io/villupp-pubgstatsbot:${{ github.sha }}
           file: Dockerfile
+          
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+      - name: Build and deploy Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: villuppacr
+          containerAppName: vp-pubgstatsbot-ca
+          resourceGroup: vp-discordbots-rg
+          imageToDeploy: villuppacr.azurecr.io/villupp-pubgstatsbot:${{ github.sha }}
