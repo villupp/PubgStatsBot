@@ -20,7 +20,7 @@ jobs:
       - name: Docker Login
         uses: azure/docker-login@v1
         with:
-          login-server: ${{ secrets.ACR_URL }}
+          login-server: villuppacr.azurecr.io
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
@@ -28,5 +28,5 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: latest
+          tags: villuppacr.azurecr.io/villupp-pubgstatsbot:latest
           file: Dockerfile
