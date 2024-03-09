@@ -43,6 +43,6 @@ Environment variable names can't contain colons `:`. Replace these with double u
 
 Update with Azure CLI with `az containerapp update`, for example:
 
-`az containerapp update -n vp-pubgstatsbot-ca -g vp-discordbots-rg --set-env-vars Logging__LogLevel__Azure.Core=Warning Logging__LogLevel__System.Net.Http=Warning`
+`az containerapp update -n vp-pubgstatsbot-ca -g vp-discordbots-rg --set-env-vars "Logging__LogLevel__Azure.Core=Warning" "Logging__LogLevel__System.Net.Http=Warning"`
 
-To refer a secret, use `envvar=secretref:secretname`
+To refer a secret, use `"envvar=secretref:secretname"`
