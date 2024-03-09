@@ -75,12 +75,12 @@ namespace Villupp.PubgStatsBot
                     })
                     ;
             })
-                .ConfigureLogging((context, builder) =>
-                {
-                    string instrumentationKey = botSettings.ApplicationInsightsKey;
-                    if (!string.IsNullOrEmpty(instrumentationKey))
-                        builder.AddApplicationInsightsWebJobs(o => o.InstrumentationKey = instrumentationKey);
-                })
+            .ConfigureLogging((context, builder) =>
+            {
+#if !DEBUG
+                builder.AddApplicationInsights();
+#endif
+            })
             .Build();
 
             host.Run();

@@ -14,7 +14,7 @@
             "args": [],
             "cwd": "${workspaceFolder}/Villupp.PubgStatsBot",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "internalConsole",
+            "console": "integratedTerminal",
             "stopAtEntry": false,
             "logging": {
                 "moduleLoad": false
