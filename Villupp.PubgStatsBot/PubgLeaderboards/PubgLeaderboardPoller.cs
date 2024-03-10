@@ -9,6 +9,8 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
 {
     public class PubgLeaderboardPoller
     {
+        private const int STORAGE_REQUEST_BATCH_SIZE = 50;
+
         private readonly ILogger<PubgLeaderboardPoller> logger;
         private readonly PubgApiClient pubgClient;
         private readonly PubgStatsBotSettings botSettings;
@@ -81,19 +83,30 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
             var lbPlayersToDelete = await lbPlayerTableService.Get(p => p.Season == seasonId);
             var deleteTasks = new List<Task>();
 
-            foreach (var lbPlayerToDelete in lbPlayersToDelete)
+            for (int i = 0; i < lbPlayersToDelete.Count; i++)
+            {
+                var lbPlayerToDelete = lbPlayersToDelete[i];
                 deleteTasks.Add(lbPlayerTableService.Delete(lbPlayerToDelete));
 
-            logger.LogInformation($"Deleting {lbPlayersToDelete.Count} current season leaderboard players");
-            Task.WaitAll(deleteTasks.ToArray());
+                if (deleteTasks.Count == STORAGE_REQUEST_BATCH_SIZE
+                    || i == lbPlayersToDelete.Count - 1)
+                {
+                    logger.LogInformation($"Deleting {deleteTasks.Count} current season leaderboard players");
+                    Task.WaitAll(deleteTasks.ToArray());
+
+                    deleteTasks = new List<Task>();
+                }
+            }
 
             var addTasks = new List<Task>();
 
             logger.LogInformation($"Deleted {lbPlayersToDelete.Count} current season leaderboard players");
             logger.LogInformation($"Adding {seasonLbPlayers.Count} current season leaderboard players");
 
-            foreach (var lbPlayer in seasonLbPlayers)
+            for (int i = 0; i < seasonLbPlayers.Count; i++)
             {
+                var lbPlayer = seasonLbPlayers[i];
+
                 var now = DateTime.UtcNow;
                 var lbPlayerToAdd = new PubgLeaderboardPlayer()
                 {
@@ -118,6 +131,15 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                 lbPlayerToAdd.WinRatio = lbPlayerToAdd.WinCount == 0 ? 0 : (decimal)lbPlayerToAdd.WinCount / (decimal)lbPlayerToAdd.GameCount;
 
                 addTasks.Add(lbPlayerTableService.Add(lbPlayerToAdd));
+
+                if (addTasks.Count == STORAGE_REQUEST_BATCH_SIZE
+                    || i == seasonLbPlayers.Count - 1)
+                {
+                    logger.LogInformation($"Adding {addTasks.Count} current season leaderboard players");
+                    Task.WaitAll(addTasks.ToArray());
+
+                    addTasks = new List<Task>();
+                }
             }
 
             Task.WaitAll(addTasks.ToArray());
