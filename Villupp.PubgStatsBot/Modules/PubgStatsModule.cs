@@ -1,6 +1,7 @@
 ﻿using Discord.Interactions;
 using Microsoft.Extensions.Logging;
 using Villupp.PubgStatsBot.CommandHandlers.PubgStats;
+using Villupp.PubgStatsBot.TableStorage.Models;
 using Villupp.PubgStatsBot.TableStorage.Repositories;
 
 namespace Villupp.PubgStatsBot.Modules
@@ -23,7 +24,7 @@ namespace Villupp.PubgStatsBot.Modules
         [SlashCommand("player", "")]
         public async Task SeasonRankedStats(string playername, bool ispublic = false, int season = -1)
         {
-            logger.LogInformation($"CurrentSeasonStats initiated by {Context.User.Username} for player '{playername}', season {season}");
+            logger.LogInformation($"SeasonRankedStats initiated by {Context.User.Username} for player '{playername}', season {season}");
 
             if (string.IsNullOrEmpty(playername))
             {
@@ -31,10 +32,22 @@ namespace Villupp.PubgStatsBot.Modules
                 return;
             }
 
+            if (season != -1 && season < 7)
+            {
+                await RespondAsync("Ranked season stats are available from season 7 and later.");
+                return;
+            }
+
             await RespondAsync($"Retrieving stats for {playername}..", ephemeral: !ispublic);
 
             var player = await pubgStatsHandler.GetPlayer(playername);
-            var statsSeason = await seasonRepository.GetSeason(season);
+            var currentSeason = await seasonRepository.GetCurrentSeason();
+            PubgSeason statsSeason = null;
+
+            if (season > currentSeason.SeasonNumber)
+                statsSeason = currentSeason;
+            else
+                statsSeason = await seasonRepository.GetSeason(season);
 
             if (player == null)
             {

@@ -110,7 +110,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
                 LogHttpFailure(httpResponse);
 
-                throw new HttpRequestException();
+                return null;
             }
 
             var rankedStatsRes = await httpResponse.Content.ReadFromJsonAsync<RankedStatsResponse>();
