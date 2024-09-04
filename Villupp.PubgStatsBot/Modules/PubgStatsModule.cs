@@ -34,7 +34,7 @@ namespace Villupp.PubgStatsBot.Modules
 
             if (season != -1 && season < 7)
             {
-                await RespondAsync("Ranked season stats are available from season 7 and later.");
+                await RespondAsync("Ranked season stats are available from season 7 and later.", ephemeral: true);
                 return;
             }
 
