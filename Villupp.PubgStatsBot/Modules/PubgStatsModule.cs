@@ -51,7 +51,7 @@ namespace Villupp.PubgStatsBot.Modules
             }
 
             var seasonStats = await pubgStatsHandler.GetRankedStats(player, statsSeason);
-            var statsMsg = await pubgStatsHandler.CreateStatsMessage(player, statsSeason, seasonStats);
+            var statsMsg = await pubgStatsHandler.CreateStatsMessage(player, statsSeason, seasonStats, ispublic);
             var seasonStatsEmbed = await pubgStatsHandler.CreatePlayerSeasonStatsEmbed(statsMsg);
             var seasonScrollButtonsComponent = await pubgStatsHandler.CreateSeasonScrollButtonsComponent(statsMsg);
 

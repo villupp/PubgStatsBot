@@ -17,5 +17,6 @@ public class PubgStatsMessage
   public PubgSeason SelectedSeason { get; set; }
   // <SeasonNumber, RankedStats>
   public Dictionary<int, RankedStats> RankedSeasonStats { get; set; }
+  public bool IsPublic { get; set; }
   public IUserMessage UserMessage { get; set; }
 }
