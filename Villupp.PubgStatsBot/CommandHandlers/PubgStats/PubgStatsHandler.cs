@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.Api.Pubg.Models;
@@ -12,7 +13,6 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 {
     public class PubgStatsHandler
     {
-        private const string SEASONID_PREFIX_RANKED_SQUAD_FPP_PC = "division.bro.official.pc-2018-";
         private const string RANKTIER_NAME_MASTER = "Master";
         private ILogger logger;
         private PubgApiClient pubgClient;
@@ -21,6 +21,8 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         private TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService;
         private TableStorageService<PubgSeason> seasonTableService;
         private PubgStatsBotSettings botSettings;
+
+        public List<PubgStatsMessage> StatsMessages { get; set; }
 
         public PubgStatsHandler(ILogger<PubgStatsHandler> logger,
             PubgApiClient pubgClient,
@@ -38,16 +40,71 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             this.botSettings = botSettings;
             this.lbPlayerTableService = lbPlayerTableService;
             this.seasonTableService = seasonTableService;
+
+            StatsMessages = [];
         }
 
-        public Embed CreatePlayerSeasonStatsEmbed(PubgPlayer player, PubgLeaderboardPlayer lbPlayer, PubgSeason season, RankedStats rankedStats)
+        public async Task<PubgStatsMessage> CreateStatsMessage(PubgPlayer player, PubgSeason season, RankedStats stats)
+        {
+            var previousSeasonBtnId = Guid.NewGuid();
+            var nextSeasonBtnId = Guid.NewGuid();
+
+            logger.LogInformation($"Creating new stats message with" +
+                $" previous season button ID {previousSeasonBtnId}" +
+                $", unregister button ID {nextSeasonBtnId}" +
+                $", player '{player.DisplayName}'" +
+                $", season: '{season.Id}'");
+
+            var statsMessage = new PubgStatsMessage()
+            {
+                ButtonIdPreviousSeason = previousSeasonBtnId,
+                ButtonIdNextSeason = nextSeasonBtnId,
+                Player = player,
+                SelectedSeason = season,
+            };
+
+            statsMessage.RankedSeasonStats[season.SeasonNumber] = stats;
+
+            if (StatsMessages.Count > 100)
+            {
+                await DeleteStatsMessage(StatsMessages[0]);
+                StatsMessages.RemoveAt(0);
+            }
+
+            StatsMessages.Add(statsMessage);
+
+            return statsMessage;
+        }
+
+        private async Task DeleteStatsMessage(PubgStatsMessage statsMsg)
+        {
+            logger.LogInformation($"DeleteStatsMessage {statsMsg?.Id}");
+
+            try
+            {
+                if (statsMsg?.UserMessage != null)
+                {
+                    var message = statsMsg.UserMessage;
+                    logger.LogInformation($"Deleting message ID {message?.Id}");
+                    await message.DeleteAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"DeleteMessage failed for stats message ID {statsMsg?.UserMessage?.Id}: {ex.Message}");
+            }
+        }
+
+        public async Task<Embed> CreatePlayerSeasonStatsEmbed(PubgStatsMessage statsMsg)
         {
             var statsStr = "";
-            var seasonNumber = season.Id.Replace(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC, "");
-            var titleText = $"PUBG ranked season {seasonNumber} squad FPP stats for player {(string.IsNullOrEmpty(player.DisplayName) ? player.Name : player.DisplayName)}";
-            var pubgOpGgUrl = $"https://pubg.op.gg/user/{player.Name}";
+            var titleText = $"PUBG ranked season {statsMsg.SelectedSeason.SeasonNumber} squad FPP stats for player " +
+                $"{(string.IsNullOrEmpty(statsMsg.Player.DisplayName) ? statsMsg.Player.Name : statsMsg.Player.DisplayName)}";
+            var pubgOpGgUrl = $"https://pubg.op.gg/user/{statsMsg.Player.Name}";
+            var seasonStats = statsMsg.RankedSeasonStats.GetValueOrDefault(statsMsg.SelectedSeason.SeasonNumber);
+            var lbPlayer = await GetLeaderboardPlayer(statsMsg.Player.DisplayName, statsMsg.SelectedSeason.Id);
 
-            if (rankedStats?.Attributes?.Stats?.SquadFpp == null)
+            if (seasonStats?.Attributes?.Stats?.SquadFpp == null)
             {
                 return new EmbedBuilder()
                  .WithTitle(titleText)
@@ -56,7 +113,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                  .WithUrl(pubgOpGgUrl)
                  .Build();
             }
-            var stats = rankedStats.Attributes.Stats.SquadFpp;
+            var stats = seasonStats.Attributes.Stats.SquadFpp;
             var kdr = 0.00m;
             var kdrDisplay = "N/A";
 
@@ -104,8 +161,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         public Embed CreateLeaderboardEmded(PubgSeason season, List<PubgLeaderboardPlayer> lbPlayers)
         {
             var leaderboardStr = "";
-            var seasonNumber = season.Id.Replace(SEASONID_PREFIX_RANKED_SQUAD_FPP_PC, "");
-            var titleText = $"PUBG ranked season {seasonNumber} top {lbPlayers.Count}";
+            var titleText = $"PUBG ranked season {season.SeasonNumber} top {lbPlayers.Count}";
 
             lbPlayers = lbPlayers.OrderBy(p => p.Rank).ToList();
 
@@ -137,9 +193,71 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             return embedBuilder.Build();
         }
 
+        public async Task<MessageComponent> CreateSeasonScrollButtonsComponent(PubgStatsMessage statsMsg)
+        {
+            var currentSeason = await seasonRepository.GetCurrentSeason();
+            var isPreviousSeasonAvailable = await seasonRepository.GetSeason(statsMsg.SelectedSeason.SeasonNumber - 1) != null
+                && statsMsg.SelectedSeason.SeasonNumber > 7;
+
+            var btnCompBuilder = new ComponentBuilder();
+
+            if (isPreviousSeasonAvailable)
+                btnCompBuilder.WithButton("Previous", statsMsg.ButtonIdPreviousSeason.ToString(), ButtonStyle.Primary);
+
+            if (currentSeason.Id != statsMsg.SelectedSeason.Id)
+                btnCompBuilder.WithButton("Next", statsMsg.ButtonIdNextSeason.ToString(), ButtonStyle.Primary);
+
+            return btnCompBuilder.Build();
+        }
+
+        private PubgStatsMessage GetStatsMessage(Guid buttonId)
+        {
+            return StatsMessages.Where(rs =>
+                rs.ButtonIdPreviousSeason == buttonId
+                || rs.ButtonIdNextSeason == buttonId)
+                .FirstOrDefault();
+        }
+
+        public async Task OnNextSeasonButtonSelect(Guid btnId, SocketMessageComponent msgComponent)
+        {
+            var statsMsg = GetStatsMessage(btnId);
+            var statsSeason = await seasonRepository.GetSeason(statsMsg.SelectedSeason.SeasonNumber + 1);
+
+            await UpdateStatsMessage(statsMsg, statsSeason, msgComponent);
+        }
+
+        public async Task OnPreviousSeasonButtonSelect(Guid btnId, SocketMessageComponent msgComponent)
+        {
+            var statsMsg = GetStatsMessage(btnId);
+            var statsSeason = await seasonRepository.GetSeason(statsMsg.SelectedSeason.SeasonNumber - 1);
+
+            await UpdateStatsMessage(statsMsg, statsSeason, msgComponent);
+        }
+
+        public async Task UpdateStatsMessage(PubgStatsMessage statsMsg, PubgSeason season, SocketMessageComponent msgComponent)
+        {
+            RankedStats seasonStats = null;
+
+            if (!statsMsg.RankedSeasonStats.ContainsKey(season.SeasonNumber))
+            {
+                seasonStats = await GetRankedStats(statsMsg.Player, season);
+                statsMsg.RankedSeasonStats[season.SeasonNumber] = seasonStats;
+            }
+
+            statsMsg.SelectedSeason = season;
+
+            var embed = await CreatePlayerSeasonStatsEmbed(statsMsg);
+            var buttonsComponent = await CreateSeasonScrollButtonsComponent(statsMsg);
+
+            await msgComponent.UpdateAsync(mp =>
+            {
+                mp.Embed = embed;
+                mp.Components = buttonsComponent;
+            });
+        }
+
         private string GetRankThumbnailUrl(RankTier rankTier)
         {
-            //https://opgg-pubg-static.akamaized.net/images/tier/competitive/Platinum-5.png
             if (rankTier == null || string.IsNullOrEmpty(botSettings.PubgStatsRankImageTemplateUrl))
                 return "";
 
@@ -156,7 +274,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             if (seasons == null || seasons.Count == 0)
                 return false;
 
-            if (!(await seasonTableService.DeleteAll()))
+            if (!await seasonTableService.DeleteAll())
             {
                 logger.LogError($"RefreshSeasonCache: table clear failed.");
                 return false;

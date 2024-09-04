@@ -31,7 +31,7 @@ namespace Villupp.PubgStatsBot.TableStorage.Repositories
 
             var seasons = await Get();
 
-            return seasons.SingleOrDefault(s => s.Id == $"{SEASONID_PREFIX_RANKED_SQUAD_FPP_PC}{seasonNumber}");
+            return seasons.SingleOrDefault(s => s.Id == $"{SEASONID_PREFIX_RANKED_SQUAD_FPP_PC}{seasonNumber:D2}");
         }
     }
 }

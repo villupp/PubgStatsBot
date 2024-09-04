@@ -20,6 +20,7 @@ namespace Villupp.PubgStatsBot
         private readonly InteractionService interactionService;
         private readonly IServiceProvider serviceProvider;
         private readonly PubgLeaderboardPoller pubgLeaderboardPoller;
+        private readonly ButtonHandler buttonHandler;
 
         public BotService(
             ILogger<BotService> logger,
@@ -29,7 +30,8 @@ namespace Villupp.PubgStatsBot
             CommandService commandService,
             InteractionService interactionService,
             IServiceProvider serviceProvider,
-            PubgLeaderboardPoller pubgLeaderboardPoller
+            PubgLeaderboardPoller pubgLeaderboardPoller,
+            ButtonHandler buttonHandler
             )
         {
             appLifetime.ApplicationStarted.Register(OnStarted);
@@ -43,6 +45,7 @@ namespace Villupp.PubgStatsBot
             this.interactionService = interactionService;
             this.serviceProvider = serviceProvider;
             this.pubgLeaderboardPoller = pubgLeaderboardPoller;
+            this.buttonHandler = buttonHandler;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -104,6 +107,8 @@ namespace Villupp.PubgStatsBot
                     _ = pubgLeaderboardPoller.Start().ConfigureAwait(false);
                 }
             };
+
+            discordSocketClient.ButtonExecuted += buttonHandler.OnButtonExecuted;
 
             await InstallCommands();
         }

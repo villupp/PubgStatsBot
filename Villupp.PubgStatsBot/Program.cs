@@ -1,5 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.Interactions;
+using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
@@ -42,6 +43,10 @@ namespace Villupp.PubgStatsBot
                 {
                 };
 
+                var discordRestConfig = new DiscordRestConfig() {
+
+                };
+
                 services.AddAzureClients(builder =>
                 {
                     builder.AddTableServiceClient(botSettings.StorageKey);
@@ -57,6 +62,7 @@ namespace Villupp.PubgStatsBot
                 services.AddSingleton(commandServiceConfig);
                 services.AddSingleton(interactionServiceConfig);
                 services.AddSingleton<DiscordSocketClient>();
+                services.AddSingleton<DiscordRestClient>();
                 services.AddSingleton<CommandService>();
                 services.AddSingleton<InteractionService>();
                 services.AddSingleton<TableStorageService<PubgSeason>>();
@@ -66,6 +72,7 @@ namespace Villupp.PubgStatsBot
                 services.AddSingleton<PubgStatsHandler>();
                 services.AddSingleton<PubgLeaderboardPoller>();
                 services.AddSingleton<AuthenticationHandler>();
+                services.AddSingleton<ButtonHandler>();
 
                 services.AddHttpClient<PubgApiClient>(client => { client.BaseAddress = new Uri(botSettings.PubgApiBaseUrl); })
                     .AddHttpMessageHandler<AuthenticationHandler>()
