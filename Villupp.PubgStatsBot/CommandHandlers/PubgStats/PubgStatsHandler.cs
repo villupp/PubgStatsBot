@@ -44,7 +44,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             StatsMessages = [];
         }
 
-        public async Task<PubgStatsMessage> CreateStatsMessage(PubgPlayer player, PubgSeason season, RankedStats stats)
+        public async Task<PubgStatsMessage> CreateStatsMessage(PubgPlayer player, PubgSeason season, RankedStats stats, bool isPublic)
         {
             var previousSeasonBtnId = Guid.NewGuid();
             var nextSeasonBtnId = Guid.NewGuid();
@@ -61,6 +61,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 ButtonIdNextSeason = nextSeasonBtnId,
                 Player = player,
                 SelectedSeason = season,
+                IsPublic = isPublic
             };
 
             statsMessage.RankedSeasonStats[season.SeasonNumber] = stats;
@@ -195,6 +196,9 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task<MessageComponent> CreateSeasonScrollButtonsComponent(PubgStatsMessage statsMsg)
         {
+            if (statsMsg.IsPublic)
+                return null;
+
             var currentSeason = await seasonRepository.GetCurrentSeason();
             var isPreviousSeasonAvailable = await seasonRepository.GetSeason(statsMsg.SelectedSeason.SeasonNumber - 1) != null
                 && statsMsg.SelectedSeason.SeasonNumber > 7;
