@@ -51,13 +51,15 @@ namespace Villupp.PubgStatsBot.Modules
             }
 
             var seasonStats = await pubgStatsHandler.GetRankedStats(player, statsSeason);
-            var lbPlayer = await pubgStatsHandler.GetLeaderboardPlayer(player.DisplayName, statsSeason.Id);
-            var embed = pubgStatsHandler.CreatePlayerSeasonStatsEmbed(player, lbPlayer, statsSeason, seasonStats);
+            var statsMsg = await pubgStatsHandler.CreateStatsMessage(player, statsSeason, seasonStats);
+            var seasonStatsEmbed = await pubgStatsHandler.CreatePlayerSeasonStatsEmbed(statsMsg);
+            var seasonScrollButtonsComponent = await pubgStatsHandler.CreateSeasonScrollButtonsComponent(statsMsg);
 
-            await ModifyOriginalResponseAsync((msg) =>
+            statsMsg.UserMessage = await ModifyOriginalResponseAsync((msg) =>
             {
                 msg.Content = null;
-                msg.Embed = embed;
+                msg.Embed = seasonStatsEmbed;
+                msg.Components = seasonScrollButtonsComponent;
             });
         }
 
