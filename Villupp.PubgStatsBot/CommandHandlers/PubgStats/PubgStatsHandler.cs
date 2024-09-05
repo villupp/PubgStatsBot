@@ -270,6 +270,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
                 await msgComponent.UpdateAsync(mp =>
                 {
+                    mp.Content = null;
                     mp.Embed = embed;
                     mp.Components = buttonsComponent;
                 });
