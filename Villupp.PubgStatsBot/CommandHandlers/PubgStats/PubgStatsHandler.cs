@@ -290,6 +290,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             await msgComponent.UpdateAsync(mp =>
             {
                 mp.Content = errorMessage;
+                mp.Embed = null;
                 mp.Components = refreshButtonComponent;
             });
         }
