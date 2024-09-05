@@ -58,7 +58,8 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 IsPublic = isPublic
             };
 
-            statsMessage.RankedSeasonStats[season.SeasonNumber] = stats;
+            if (stats != null)
+                statsMessage.RankedSeasonStats[season.SeasonNumber] = stats;
 
             if (StatsMessages.Count > 100)
             {
@@ -284,9 +285,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task HandleStatsMessageError(PubgStatsMessage statsMsg, string errorMessage, SocketMessageComponent msgComponent)
         {
-            var refreshButtonComponent = new ComponentBuilder()
-                .WithButton("Refresh", statsMsg.ButtonIdRefresh.ToString(), ButtonStyle.Primary)
-                .Build();
+            var refreshButtonComponent = CreateRefreshButtonComponent(statsMsg.ButtonIdRefresh);
 
             await msgComponent.UpdateAsync(mp =>
             {
@@ -294,6 +293,13 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 mp.Embed = null;
                 mp.Components = refreshButtonComponent;
             });
+        }
+
+        public static MessageComponent CreateRefreshButtonComponent(Guid btnId)
+        {
+            return new ComponentBuilder()
+                .WithButton("Refresh", btnId.ToString(), ButtonStyle.Primary)
+                .Build();
         }
 
         private string GetRankThumbnailUrl(RankTier rankTier)

@@ -1,5 +1,7 @@
 ﻿using Discord.Interactions;
 using Microsoft.Extensions.Logging;
+using Villupp.PubgStatsBot.Api;
+using Villupp.PubgStatsBot.Api.Pubg.Models;
 using Villupp.PubgStatsBot.CommandHandlers.PubgStats;
 using Villupp.PubgStatsBot.TableStorage.Models;
 using Villupp.PubgStatsBot.TableStorage.Repositories;
@@ -26,54 +28,86 @@ namespace Villupp.PubgStatsBot.Modules
         {
             logger.LogInformation($"SeasonRankedStats initiated by {Context.User.Username} for player '{playername}', season {season}");
 
-            if (string.IsNullOrEmpty(playername))
+            try
             {
-                await RespondAsync("Provide a player name.", ephemeral: true);
-                return;
+                if (string.IsNullOrEmpty(playername))
+                {
+                    await RespondAsync("Provide a player name.", ephemeral: true);
+                    return;
+                }
+
+                if (season != -1 && season < 7)
+                {
+                    await RespondAsync("Ranked season stats are available from season 7 and later.", ephemeral: true);
+                    return;
+                }
+
+                await RespondAsync($"Retrieving stats for {playername}..", ephemeral: !ispublic);
+
+                var player = await pubgStatsHandler.GetPlayer(playername);
+                var currentSeason = await seasonRepository.GetCurrentSeason();
+                PubgSeason statsSeason = null;
+
+                if (season > currentSeason.SeasonNumber)
+                    statsSeason = currentSeason;
+                else
+                    statsSeason = await seasonRepository.GetSeason(season);
+
+                if (player == null)
+                {
+                    logger.LogInformation("Could not retrieve player. Stats not posted.");
+                    await ModifyOriginalResponseAsync((msg) => msg.Content = "Player not found.");
+                    return;
+                }
+
+                if (statsSeason == null)
+                {
+                    logger.LogInformation("Could not retrieve season. Stats not posted.");
+                    await ModifyOriginalResponseAsync((msg) => msg.Content = "Ranked season not found. There might be an issue. Use `refreshseasons` command to refresh season cache.");
+                    return;
+                }
+
+                PubgStatsMessage statsMsg = null;
+                RankedStats seasonStats = null;
+
+                try
+                {
+                    seasonStats = await pubgStatsHandler.GetRankedStats(player, statsSeason);
+                }
+                catch (TooManyRequestsException ex)
+                {
+                    logger.LogWarning($"Too many requests while requesting stats: {ex}");
+
+                    statsMsg = await pubgStatsHandler.CreateStatsMessage(player, statsSeason, null, ispublic);
+
+                    statsMsg.UserMessage = await ModifyOriginalResponseAsync((msg) =>
+                    {
+                        msg.Content = "PUBG API limits exceeded. Please try again shortly.";
+                        msg.Embed = null;
+                        msg.Components = PubgStatsHandler.CreateRefreshButtonComponent(statsMsg.ButtonIdRefresh);
+                    });
+                    return;
+                }
+
+                statsMsg = await pubgStatsHandler.CreateStatsMessage(player, statsSeason, seasonStats, ispublic);
+                var seasonStatsEmbed = await pubgStatsHandler.CreatePlayerSeasonStatsEmbed(statsMsg);
+                var seasonScrollButtonsComponent = await pubgStatsHandler.CreateSeasonScrollButtonsComponent(statsMsg);
+
+                statsMsg.UserMessage = await ModifyOriginalResponseAsync((msg) =>
+                {
+                    msg.Content = null;
+                    msg.Embed = seasonStatsEmbed;
+                    msg.Components = seasonScrollButtonsComponent;
+                });
             }
-
-            if (season != -1 && season < 7)
+            catch (Exception ex)
             {
-                await RespondAsync("Ranked season stats are available from season 7 and later.", ephemeral: true);
-                return;
+                logger.LogError($"ERROR in UpdateStatsMessage: {ex}");
+                await ModifyOriginalResponseAsync((msg) =>
+                   {
+                       msg.Content = "Something went horribly wrong :(";
+                   });
             }
-
-            await RespondAsync($"Retrieving stats for {playername}..", ephemeral: !ispublic);
-
-            var player = await pubgStatsHandler.GetPlayer(playername);
-            var currentSeason = await seasonRepository.GetCurrentSeason();
-            PubgSeason statsSeason = null;
-
-            if (season > currentSeason.SeasonNumber)
-                statsSeason = currentSeason;
-            else
-                statsSeason = await seasonRepository.GetSeason(season);
-
-            if (player == null)
-            {
-                logger.LogInformation("Could not retrieve player. Stats not posted.");
-                await ModifyOriginalResponseAsync((msg) => msg.Content = "Player not found.");
-                return;
-            }
-
-            if (statsSeason == null)
-            {
-                logger.LogInformation("Could not retrieve season. Stats not posted.");
-                await ModifyOriginalResponseAsync((msg) => msg.Content = "Ranked season not found. There might be an issue. Use `refreshseasons` command to refresh season cache.");
-                return;
-            }
-
-            var seasonStats = await pubgStatsHandler.GetRankedStats(player, statsSeason);
-            var statsMsg = await pubgStatsHandler.CreateStatsMessage(player, statsSeason, seasonStats, ispublic);
-            var seasonStatsEmbed = await pubgStatsHandler.CreatePlayerSeasonStatsEmbed(statsMsg);
-            var seasonScrollButtonsComponent = await pubgStatsHandler.CreateSeasonScrollButtonsComponent(statsMsg);
-
-            statsMsg.UserMessage = await ModifyOriginalResponseAsync((msg) =>
-            {
-                msg.Content = null;
-                msg.Embed = seasonStatsEmbed;
-                msg.Components = seasonScrollButtonsComponent;
-            });
         }
 
         [SlashCommand("leaderboard", "")]
