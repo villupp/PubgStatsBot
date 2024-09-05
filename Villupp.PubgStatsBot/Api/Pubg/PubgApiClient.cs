@@ -22,7 +22,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (httpResponse.StatusCode == HttpStatusCode.NotFound)
                     return null;
 
                 LogHttpFailure(httpResponse);
@@ -45,10 +45,13 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (httpResponse.StatusCode == HttpStatusCode.NotFound)
                     return null;
 
                 LogHttpFailure(httpResponse);
+
+                if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
+                    throw new TooManyRequestsException("GetPlayers: too many requests");
 
                 throw new HttpRequestException();
             }
@@ -77,10 +80,13 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (httpResponse.StatusCode == HttpStatusCode.NotFound)
                     return null;
 
                 LogHttpFailure(httpResponse);
+
+                if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
+                    throw new TooManyRequestsException("GetSeasons: too many requests");
 
                 throw new HttpRequestException();
             }
@@ -131,10 +137,13 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (httpResponse.StatusCode == HttpStatusCode.NotFound)
                     return null;
 
                 LogHttpFailure(httpResponse);
+
+                if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
+                    throw new TooManyRequestsException("GetLeaderboardPlayers: too many requests");
 
                 throw new HttpRequestException();
             }
