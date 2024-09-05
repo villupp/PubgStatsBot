@@ -100,13 +100,21 @@ namespace Villupp.PubgStatsBot.Modules
                     msg.Components = seasonScrollButtonsComponent;
                 });
             }
+            catch (TooManyRequestsException ex)
+            {
+                logger.LogWarning($"TooManyRequestsException in SeasonRankedStats: {ex}");
+                await ModifyOriginalResponseAsync((msg) =>
+                {
+                    msg.Content = "PUBG API limits exceeded. Please try again shortly.";
+                });
+            }
             catch (Exception ex)
             {
-                logger.LogError($"ERROR in UpdateStatsMessage: {ex}");
+                logger.LogError($"ERROR in SeasonRankedStats: {ex}");
                 await ModifyOriginalResponseAsync((msg) =>
-                   {
-                       msg.Content = "Something went horribly wrong :(";
-                   });
+                {
+                    msg.Content = "Something went horribly wrong :(";
+                });
             }
         }
 
