@@ -6,6 +6,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
+using Villupp.PubgStatsBot.Components;
 using Villupp.PubgStatsBot.Config;
 using Villupp.PubgStatsBot.PubgLeaderboards;
 

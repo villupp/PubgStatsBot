@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
+using Villupp.PubgStatsBot.Api;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.Api.Pubg.Models;
 using Villupp.PubgStatsBot.Common;
@@ -46,19 +47,12 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task<PubgStatsMessage> CreateStatsMessage(PubgPlayer player, PubgSeason season, RankedStats stats, bool isPublic)
         {
-            var previousSeasonBtnId = Guid.NewGuid();
-            var nextSeasonBtnId = Guid.NewGuid();
-
-            logger.LogInformation($"Creating new stats message with" +
-                $" previous season button ID {previousSeasonBtnId}" +
-                $", unregister button ID {nextSeasonBtnId}" +
+            logger.LogInformation($"Creating new stats message for" +
                 $", player '{player.DisplayName}'" +
                 $", season: '{season.Id}'");
 
             var statsMessage = new PubgStatsMessage()
             {
-                ButtonIdPreviousSeason = previousSeasonBtnId,
-                ButtonIdNextSeason = nextSeasonBtnId,
                 Player = player,
                 SelectedSeason = season,
                 IsPublic = isPublic
@@ -218,7 +212,9 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         {
             return StatsMessages.Where(rs =>
                 rs.ButtonIdPreviousSeason == buttonId
-                || rs.ButtonIdNextSeason == buttonId)
+                || rs.ButtonIdNextSeason == buttonId
+                || rs.ButtonIdRefresh == buttonId
+                )
                 .FirstOrDefault();
         }
 
@@ -238,25 +234,63 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             await UpdateStatsMessage(statsMsg, statsSeason, msgComponent);
         }
 
+        public async Task OnRefreshButtonSelect(Guid btnId, SocketMessageComponent msgComponent)
+        {
+            var statsMsg = GetStatsMessage(btnId);
+
+            await UpdateStatsMessage(statsMsg, statsMsg.SelectedSeason, msgComponent);
+        }
+
         public async Task UpdateStatsMessage(PubgStatsMessage statsMsg, PubgSeason season, SocketMessageComponent msgComponent)
         {
-            RankedStats seasonStats = null;
-
-            if (!statsMsg.RankedSeasonStats.ContainsKey(season.SeasonNumber))
+            try
             {
-                seasonStats = await GetRankedStats(statsMsg.Player, season);
-                statsMsg.RankedSeasonStats[season.SeasonNumber] = seasonStats;
+                RankedStats seasonStats = null;
+
+                statsMsg.SelectedSeason = season;
+
+                if (!statsMsg.RankedSeasonStats.ContainsKey(season.SeasonNumber))
+                {
+                    try
+                    {
+                        seasonStats = await GetRankedStats(statsMsg.Player, season);
+                    }
+                    catch (TooManyRequestsException ex)
+                    {
+                        logger.LogWarning($"Too many requests while requesting stats: {ex}");
+                        await HandleStatsMessageError(statsMsg, "PUBG API limits exceeded. Please try again shortly.", msgComponent);
+                        return;
+                    }
+
+                    statsMsg.RankedSeasonStats[season.SeasonNumber] = seasonStats;
+                }
+
+                var embed = await CreatePlayerSeasonStatsEmbed(statsMsg);
+                var buttonsComponent = await CreateSeasonScrollButtonsComponent(statsMsg);
+
+                await msgComponent.UpdateAsync(mp =>
+                {
+                    mp.Embed = embed;
+                    mp.Components = buttonsComponent;
+                });
             }
+            catch (Exception ex)
+            {
+                logger.LogError($"ERROR in UpdateStatsMessage: {ex}");
+                await HandleStatsMessageError(statsMsg, "Something went wrong. Please try again shortly.", msgComponent);
+            }
+        }
 
-            statsMsg.SelectedSeason = season;
-
-            var embed = await CreatePlayerSeasonStatsEmbed(statsMsg);
-            var buttonsComponent = await CreateSeasonScrollButtonsComponent(statsMsg);
+        public async Task HandleStatsMessageError(PubgStatsMessage statsMsg, string errorMessage, SocketMessageComponent msgComponent)
+        {
+            var refreshButtonComponent = new ComponentBuilder()
+                .WithButton("Refresh", statsMsg.ButtonIdRefresh.ToString(), ButtonStyle.Primary)
+                .Build();
 
             await msgComponent.UpdateAsync(mp =>
             {
-                mp.Embed = embed;
-                mp.Components = buttonsComponent;
+                mp.Content = errorMessage;
+                mp.Components = refreshButtonComponent;
             });
         }
 

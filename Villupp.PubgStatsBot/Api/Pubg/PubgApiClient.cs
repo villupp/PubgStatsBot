@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Net.Http.Json;
 using Villupp.PubgStatsBot.Api.Pubg.Models;
 using Villupp.PubgStatsBot.Config;
@@ -105,10 +106,13 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
             if (!httpResponse.IsSuccessStatusCode)
             {
-                if (httpResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (httpResponse.StatusCode == HttpStatusCode.NotFound)
                     return null;
 
                 LogHttpFailure(httpResponse);
+
+                if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
+                    throw new TooManyRequestsException("GetRankedStats: too many requests");
 
                 return null;
             }

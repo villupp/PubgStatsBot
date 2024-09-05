@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.CommandHandlers.PubgStats;
+using Villupp.PubgStatsBot.Components;
 using Villupp.PubgStatsBot.Config;
 using Villupp.PubgStatsBot.PubgLeaderboards;
 using Villupp.PubgStatsBot.TableStorage;
