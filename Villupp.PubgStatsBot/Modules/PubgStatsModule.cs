@@ -24,7 +24,7 @@ namespace Villupp.PubgStatsBot.Modules
 
         // Posts PUBG player stats for current ongoing season
         [SlashCommand("player", "")]
-        public async Task SeasonRankedStats(string playername, bool ispublic = false, int season = -1)
+        public async Task SeasonRankedStats([Autocomplete(typeof(PlayerNameAutocompleteHandler))]string playername, bool ispublic = false, int season = -1)
         {
             logger.LogInformation($"SeasonRankedStats initiated by {Context.User.Username} for player '{playername}', season {season}");
 

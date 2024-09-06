@@ -76,7 +76,7 @@ namespace Villupp.PubgStatsBot
                             .WithName("player")
                             .WithDescription("Get player stats for ranked season (squad FPP).")
                             .WithType(ApplicationCommandOptionType.SubCommand)
-                            .AddOption("playername", ApplicationCommandOptionType.String, "Player name (case sensitive)", isRequired: true)
+                            .AddOption("playername", ApplicationCommandOptionType.String, "Player name. Case sensitive if not cached. Autocomplete only finds cached players.", isRequired: true, isAutocomplete: true)
                             .AddOption("season", ApplicationCommandOptionType.Integer, "Ranked season number")
                             .AddOption("ispublic", ApplicationCommandOptionType.Boolean, "Announce stats in public response (true|false)"))
                         .AddOption(new SlashCommandOptionBuilder()
