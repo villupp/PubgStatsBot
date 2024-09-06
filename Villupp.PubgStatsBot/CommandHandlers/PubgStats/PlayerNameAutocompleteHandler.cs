@@ -23,7 +23,10 @@ public class PlayerNameAutocompleteHandler(
     var playerNameInput = playerNameOpt.Value.ToString().ToLower();
     var upperBound = NextPrefix(playerNameInput);
 
-    var existingPlayers = await playerTableService.Get(p => 
+    if (playerNameInput.Length < 1)
+      return AutocompletionResult.FromSuccess([]);
+
+    var existingPlayers = await playerTableService.Get(p =>
       p.Name.CompareTo(playerNameInput) >= 0 &&
       p.Name.CompareTo(upperBound) < 0);
 
