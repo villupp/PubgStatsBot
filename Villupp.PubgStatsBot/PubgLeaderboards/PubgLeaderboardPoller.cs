@@ -59,8 +59,27 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                 {
                     logger.LogDebug("Polling for PUBG leaderboards");
 
-                    var currentSeason = await seasonRepository.GetCurrentSeason();
-                    await UpdateLeaderboards(currentSeason.Id);
+                    var seasons = new string[] {
+                        "division.bro.official.pc-2018-20",
+                        "division.bro.official.pc-2018-21",
+                        "division.bro.official.pc-2018-22",
+                        "division.bro.official.pc-2018-23",
+                        "division.bro.official.pc-2018-24",
+                        "division.bro.official.pc-2018-25",
+                        "division.bro.official.pc-2018-26",
+                        "division.bro.official.pc-2018-27",
+                        "division.bro.official.pc-2018-28",
+                        "division.bro.official.pc-2018-29",
+                        "division.bro.official.pc-2018-30",
+                        "division.bro.official.pc-2018-31"
+                    };
+
+                    foreach (var seasonId in seasons)
+                    {
+                        foreach (var region in PubgApiClient.Regions)
+                            await UpdateLeaderboards(region, seasonId);
+                        // var currentSeason = await seasonRepository.GetCurrentSeason();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -69,16 +88,16 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
             } while (await timer.WaitForNextTickAsync());
         }
 
-        private async Task UpdateLeaderboards(string seasonId)
+        private async Task UpdateLeaderboards(string region, string seasonId)
         {
-            logger.LogInformation($"UpdateLeaderboards season {seasonId}");
+            logger.LogInformation($"UpdateLeaderboards region {region} season {seasonId}");
 
-            var seasonLbPlayers = await pubgClient.GetLeaderboardPlayers(seasonId);
+            var seasonLbPlayers = await pubgClient.GetLeaderboardPlayers(region, seasonId);
 
             if (seasonLbPlayers == null || seasonLbPlayers.Count == 0)
                 return;
 
-            logger.LogInformation($"Got {seasonLbPlayers.Count} season {seasonId} leaderboard players");
+            logger.LogInformation($"Got {seasonLbPlayers.Count} {region} season {seasonId} leaderboard players");
 
             var lbPlayersToDelete = await lbPlayerTableService.Get(p => p.Season == seasonId);
             var deleteTasks = new List<Task>();
@@ -91,17 +110,17 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                 if (deleteTasks.Count == STORAGE_REQUEST_BATCH_SIZE
                     || i == lbPlayersToDelete.Count - 1)
                 {
-                    logger.LogInformation($"Deleting {deleteTasks.Count} current season leaderboard players");
+                    logger.LogInformation($"Deleting {deleteTasks.Count} region {region} season {seasonId} leaderboard players");
                     Task.WaitAll(deleteTasks.ToArray());
 
-                    deleteTasks = new List<Task>();
+                    deleteTasks = [];
                 }
             }
 
             var addTasks = new List<Task>();
 
-            logger.LogInformation($"Deleted {lbPlayersToDelete.Count} current season leaderboard players");
-            logger.LogInformation($"Adding {seasonLbPlayers.Count} current season leaderboard players");
+            logger.LogInformation($"Deleted {lbPlayersToDelete.Count} region {region} season {seasonId} leaderboard players");
+            logger.LogInformation($"Adding {seasonLbPlayers.Count} region {region} season {seasonId} leaderboard players");
 
             for (int i = 0; i < seasonLbPlayers.Count; i++)
             {
@@ -126,6 +145,7 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                     //WinRatio = lbPlayer?.attributes?.stats?.winRatio
                     Tier = lbPlayer?.attributes?.stats?.tier,
                     SubTier = lbPlayer?.attributes?.stats?.subTier,
+                    Region = region
                 };
 
                 lbPlayerToAdd.WinRatio = lbPlayerToAdd.WinCount == 0 ? 0 : (decimal)lbPlayerToAdd.WinCount / (decimal)lbPlayerToAdd.GameCount;

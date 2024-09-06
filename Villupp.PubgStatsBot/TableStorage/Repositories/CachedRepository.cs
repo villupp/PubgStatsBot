@@ -7,7 +7,7 @@ namespace Villupp.PubgStatsBot.TableStorage.Repositories
 {
     public class CachedRepository<T> where T : class, ITableEntity, new()
     {
-        private const string ALL_SEASONS_CACHE_KEY_PREFIX = "ALL_SEASONS_CACHE_KEY";
+        private const string CACHE_KEY_PREFIX = "CACHE_KEY";
 
         private readonly ILogger logger;
         private readonly TableStorageService<T> tableService;
@@ -29,14 +29,14 @@ namespace Villupp.PubgStatsBot.TableStorage.Repositories
             this.tableService = tableService;
             this.memoryCache = memoryCache;
 
-            cacheKey = $"{ALL_SEASONS_CACHE_KEY_PREFIX}-{GetType()}";
+            cacheKey = $"{CACHE_KEY_PREFIX}-{GetType()}";
         }
 
         public async Task<List<T>> Get(Expression<Func<T, bool>> query)
         {
-            var commands = await tableService.Get(query);
+            var records = await tableService.Get(query);
 
-            return commands;
+            return records;
         }
 
         public async Task<List<T>> Get(bool useCache = true)
@@ -74,7 +74,7 @@ namespace Villupp.PubgStatsBot.TableStorage.Repositories
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"CommandRepository.UpdateCache failed: {ex}");
+                logger.LogWarning($"{GetType()}.UpdateCache failed: {ex}");
             }
             finally
             {

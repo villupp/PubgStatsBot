@@ -136,7 +136,10 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             statsStr += $"Rank: **{stats.CurrentTier?.Tier}{subTierStr}**{bestTierStr}";
 
             if (lbPlayer != null)
-                statsStr += $"\nEU leaderboard rank: **#{lbPlayer.Rank}**";
+            {
+                var region = lbPlayer.Region.Replace("pc-", "").ToUpper();
+                statsStr += $"\nLeaderboard ({region}) rank: **#{lbPlayer.Rank}**";
+            }
 
             statsStr += $"\nRP: **{stats.CurrentRankPoint}** (season high: **{stats.BestRankPoint}**)";
             statsStr += $"\nMatches: **{stats.RoundsPlayed}** Wins: **{stats.Wins}** (**{string.Format("{0:0.0#}", stats.WinRatio * 100)}%**)";
@@ -154,10 +157,11 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             return embedBuilder.Build();
         }
 
-        public Embed CreateLeaderboardEmded(PubgSeason season, List<PubgLeaderboardPlayer> lbPlayers)
+        public static Embed CreateLeaderboardEmded(string region, PubgSeason season, List<PubgLeaderboardPlayer> lbPlayers)
         {
             var leaderboardStr = "";
-            var titleText = $"PUBG ranked season {season.SeasonNumber} top {lbPlayers.Count}";
+            var dispRegion = region.Replace("pc-", "").ToUpper();
+            var titleText = $"PUBG ranked {dispRegion} season {season.SeasonNumber} top {lbPlayers.Count}";
 
             lbPlayers = lbPlayers.OrderBy(p => p.Rank).ToList();
 
@@ -171,13 +175,13 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                     subTierStr = $" {PubgRankHelpers.GetSubTierRomanNumeral(lbPlayer.SubTier)}";
 
                 leaderboardStr += $"\n **#{lbPlayer.Rank}** **[{lbPlayer.Name}](https://pubg.op.gg/user/{lbPlayer.Name})**" +
-                        $" [**{lbPlayer.Tier}{subTierStr}**]" +
-                        $" [RP: **{lbPlayer.Rp}**]" +
-                        $" [Matches: **{lbPlayer.GameCount}**]" +
-                        //$" [Wins: **{lbPlayer.WinCount}** (**{string.Format("{0:0.0#}", lbPlayer.WinRatio * 100)}%**)]" +
-                        $" [Avg dmg: **{lbPlayer.AvgDamage.Value}**]" +
-                        //$" [KDA: **{string.Format("{0:0.0#}", lbPlayer.KdaRatio)}**]" +
-                        "";
+                    $" [**{lbPlayer.Tier}{subTierStr}**]" +
+                    $" [RP: **{lbPlayer.Rp}**]" +
+                    $" [Matches: **{lbPlayer.GameCount}**]" +
+                    //$" [Wins: **{lbPlayer.WinCount}** (**{string.Format("{0:0.0#}", lbPlayer.WinRatio * 100)}%**)]" +
+                    $" [Avg dmg: **{lbPlayer.AvgDamage.Value}**]" +
+                    //$" [KDA: **{string.Format("{0:0.0#}", lbPlayer.KdaRatio)}**]" +
+                    "";
             }
 
             var embedBuilder = new EmbedBuilder()
@@ -344,7 +348,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task<PubgPlayer> GetPlayer(string playerName)
         {
-            var players = await playerTableService.Get(p => p.Name == playerName.ToLower());
+            var players = await playerTableService.Get(p => p.Name.Equals(playerName, StringComparison.CurrentCultureIgnoreCase));
 
             if (players != null && players.Count > 0)
                 return players[0];
@@ -374,7 +378,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             return lbPlayers.Count > 0 ? lbPlayers[0] : null;
         }
 
-        public async Task<List<PubgLeaderboardPlayer>> GetLeaderboardPlayers(string season, int count = 500)
+        public async Task<List<PubgLeaderboardPlayer>> GetLeaderboardPlayers(string region, string season, int count = 500)
         {
             if (count > 500)
             {
@@ -382,7 +386,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
                 count = 500;
             }
 
-            return await lbPlayerTableService.Get(p => p.Season == season && p.Rank <= count);
+            return await lbPlayerTableService.Get(p => p.Region == region && p.Season == season && p.Rank <= count);
         }
 
         public async Task<RankedStats> GetRankedStats(PubgPlayer player, PubgSeason season)

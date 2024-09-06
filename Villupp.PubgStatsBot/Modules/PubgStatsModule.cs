@@ -119,9 +119,9 @@ namespace Villupp.PubgStatsBot.Modules
         }
 
         [SlashCommand("leaderboard", "")]
-        public async Task SeasonLeaderboard(bool ispublic = false, int season = -1)
+        public async Task SeasonLeaderboard(bool ispublic = false, int season = -1, string region = "pc-eu")
         {
-            logger.LogInformation($"SeasonLeaderboard initiated by {Context.User.Username} for season '{season}'");
+            logger.LogInformation($"SeasonLeaderboard initiated by {Context.User.Username} for {region} season '{season}'");
 
             await RespondAsync($"Retrieving season leaderboard..", ephemeral: !ispublic);
 
@@ -134,7 +134,7 @@ namespace Villupp.PubgStatsBot.Modules
                 return;
             }
 
-            var lbPlayers = await pubgStatsHandler.GetLeaderboardPlayers(leaderboardSeason.Id, 10);
+            var lbPlayers = await pubgStatsHandler.GetLeaderboardPlayers(region, leaderboardSeason.Id, 10);
 
             if (lbPlayers == null || lbPlayers.Count == 0)
             {
@@ -142,7 +142,7 @@ namespace Villupp.PubgStatsBot.Modules
                 return;
             }
 
-            var embed = pubgStatsHandler.CreateLeaderboardEmded(leaderboardSeason, lbPlayers);
+            var embed = PubgStatsHandler.CreateLeaderboardEmded(region, leaderboardSeason, lbPlayers);
 
             await ModifyOriginalResponseAsync(msg =>
             {

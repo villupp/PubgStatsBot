@@ -22,5 +22,6 @@ namespace Villupp.PubgStatsBot.TableStorage.Models
         public decimal? KdaRatio { get; set; }
         public string Tier { get; set; }
         public string SubTier { get; set; }
+        public string Region { get; set; }
     }
 }

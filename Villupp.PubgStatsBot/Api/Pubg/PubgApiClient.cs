@@ -8,6 +8,18 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 {
     public class PubgApiClient : ApiClient
     {
+        public static readonly string[] Regions = ["pc-as",
+            "pc-eu",
+            "pc-jp",
+            "pc-krjp",
+            "pc-kakao",
+            "pc-na",
+            "pc-oc",
+            "pc-ru",
+            "pc-sa",
+            "pc-sea"
+        ];
+
         public PubgApiClient(ILogger<ApiClient> logger, PubgStatsBotSettings botSettings, HttpClient httpClient) : base(logger, botSettings, httpClient)
         {
         }
@@ -128,11 +140,17 @@ namespace Villupp.PubgStatsBot.Api.Pubg
             return rankedStatsRes.Stats;
         }
 
-        public async Task<List<Included>> GetLeaderboardPlayers(string season)
+        public async Task<List<Included>> GetLeaderboardPlayers(string region, string season)
         {
             logger.LogInformation($"GetLeaderboard season {season}");
 
-            var reqUri = $"shards/pc-eu/leaderboards/{season}/squad-fpp";
+            if (!Regions.Contains(region))
+            {
+                logger.LogWarning($"Invalid region '{region}' given to GetLeaderboardPlayers");
+                return null;
+            }
+
+            var reqUri = $"shards/{region}/leaderboards/{season}/squad-fpp";
             var httpResponse = await httpClient.GetAsync(reqUri);
 
             if (!httpResponse.IsSuccessStatusCode)
