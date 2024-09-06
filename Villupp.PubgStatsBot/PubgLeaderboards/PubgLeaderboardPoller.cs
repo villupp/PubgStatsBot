@@ -29,7 +29,7 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
             TableStorageService<PubgPlayer> playerTableService
             )
         {
-            this.isPollerRunning = false;
+            isPollerRunning = false;
             this.logger = logger;
             this.pubgClient = pubgClient;
             this.botSettings = botSettings;
@@ -57,28 +57,13 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
             {
                 try
                 {
-                    logger.LogDebug("Polling for PUBG leaderboards");
-
-                    var seasons = new string[] {
-                        "division.bro.official.pc-2018-20",
-                        "division.bro.official.pc-2018-21",
-                        "division.bro.official.pc-2018-22",
-                        "division.bro.official.pc-2018-23",
-                        "division.bro.official.pc-2018-24",
-                        "division.bro.official.pc-2018-25",
-                        "division.bro.official.pc-2018-26",
-                        "division.bro.official.pc-2018-27",
-                        "division.bro.official.pc-2018-28",
-                        "division.bro.official.pc-2018-29",
-                        "division.bro.official.pc-2018-30",
-                        "division.bro.official.pc-2018-31"
-                    };
-
-                    foreach (var seasonId in seasons)
+                    foreach (var region in PubgApiClient.Regions)
                     {
-                        foreach (var region in PubgApiClient.Regions)
-                            await UpdateLeaderboards(region, seasonId);
-                        // var currentSeason = await seasonRepository.GetCurrentSeason();
+                        var currentSeason = await seasonRepository.GetCurrentSeason();
+                        logger.LogDebug($"Polling for PUBG leaderboard {region} {currentSeason.Id}");
+                        await UpdateLeaderboards(region, currentSeason.Id);
+                        var delay = 10000;
+                        await Task.Delay(delay);
                     }
                 }
                 catch (Exception ex)
@@ -99,7 +84,7 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
 
             logger.LogInformation($"Got {seasonLbPlayers.Count} {region} season {seasonId} leaderboard players");
 
-            var lbPlayersToDelete = await lbPlayerTableService.Get(p => p.Season == seasonId);
+            var lbPlayersToDelete = await lbPlayerTableService.Get(p => p.Region == region && p.Season == seasonId);
             var deleteTasks = new List<Task>();
 
             for (int i = 0; i < lbPlayersToDelete.Count; i++)
