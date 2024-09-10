@@ -201,14 +201,11 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             var currentSeason = await seasonRepository.GetCurrentSeason();
             var isPreviousSeasonAvailable = await seasonRepository.GetSeason(statsMsg.SelectedSeason.SeasonNumber - 1) != null
                 && statsMsg.SelectedSeason.SeasonNumber > 7;
+            var isNextSeasonAvailable = currentSeason.Id != statsMsg.SelectedSeason.Id;
 
             var btnCompBuilder = new ComponentBuilder();
-
-            if (isPreviousSeasonAvailable)
-                btnCompBuilder.WithButton("Previous", statsMsg.ButtonIdPreviousSeason.ToString(), ButtonStyle.Primary);
-
-            if (currentSeason.Id != statsMsg.SelectedSeason.Id)
-                btnCompBuilder.WithButton("Next", statsMsg.ButtonIdNextSeason.ToString(), ButtonStyle.Primary);
+            btnCompBuilder.WithButton("🡸", statsMsg.ButtonIdPreviousSeason.ToString(), ButtonStyle.Primary, disabled: !isPreviousSeasonAvailable);
+            btnCompBuilder.WithButton("🡺", statsMsg.ButtonIdNextSeason.ToString(), ButtonStyle.Primary, disabled: !isNextSeasonAvailable);
 
             return btnCompBuilder.Build();
         }
@@ -302,7 +299,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         public static MessageComponent CreateRefreshButtonComponent(Guid btnId)
         {
             return new ComponentBuilder()
-                .WithButton("Refresh", btnId.ToString(), ButtonStyle.Primary)
+                .WithButton("⭯", btnId.ToString(), ButtonStyle.Success)
                 .Build();
         }
 
@@ -382,7 +379,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         {
             if (count > 500)
             {
-                logger.LogWarning($"Tried to query for nore than 500 leaderboard players..");
+                logger.LogWarning($"Tried to query for more than 500 leaderboard players..");
                 count = 500;
             }
 
