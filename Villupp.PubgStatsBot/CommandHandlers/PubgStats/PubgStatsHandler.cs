@@ -299,7 +299,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
         public static MessageComponent CreateRefreshButtonComponent(Guid btnId)
         {
             return new ComponentBuilder()
-                .WithButton("⭯", btnId.ToString(), ButtonStyle.Success)
+                .WithButton("↻", btnId.ToString(), ButtonStyle.Success)
                 .Build();
         }
 
