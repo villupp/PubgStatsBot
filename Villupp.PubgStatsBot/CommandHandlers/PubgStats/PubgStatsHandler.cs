@@ -204,8 +204,8 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             var isNextSeasonAvailable = currentSeason.Id != statsMsg.SelectedSeason.Id;
 
             var btnCompBuilder = new ComponentBuilder();
-            btnCompBuilder.WithButton("🡸", statsMsg.ButtonIdPreviousSeason.ToString(), ButtonStyle.Primary, disabled: !isPreviousSeasonAvailable);
-            btnCompBuilder.WithButton("🡺", statsMsg.ButtonIdNextSeason.ToString(), ButtonStyle.Primary, disabled: !isNextSeasonAvailable);
+            btnCompBuilder.WithButton("◀", statsMsg.ButtonIdPreviousSeason.ToString(), ButtonStyle.Primary, disabled: !isPreviousSeasonAvailable);
+            btnCompBuilder.WithButton("▶", statsMsg.ButtonIdNextSeason.ToString(), ButtonStyle.Primary, disabled: !isNextSeasonAvailable);
 
             return btnCompBuilder.Build();
         }
