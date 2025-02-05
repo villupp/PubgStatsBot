@@ -350,7 +350,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             if (players != null && players.Count > 0)
                 return players[0];
 
-            logger.LogInformation($"Player not found by name '{playerName}'. Requesting from API..")
+            logger.LogInformation($"Player not found by name '{playerName}'. Requesting from API..");
             
             // If not found --> retrieve from API
             var player = await pubgClient.GetPlayer(playerName);
@@ -368,7 +368,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             };
 
             await playerTableService.Add(pubgPlayer);
-            logger.LogInformation($"Added player '{playerName}' to storage cache.")
+            logger.LogInformation($"Added player '{playerName}' to storage cache.");
             
             return pubgPlayer;
         }
