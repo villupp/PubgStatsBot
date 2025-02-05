@@ -345,11 +345,13 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task<PubgPlayer> GetPlayer(string playerName)
         {
-            var players = await playerTableService.Get(p => p.Name.Equals(playerName, StringComparison.CurrentCultureIgnoreCase));
+            var players = await playerTableService.Get(p => p.DisplayName == playerName);
 
             if (players != null && players.Count > 0)
                 return players[0];
 
+            logger.LogInformation($"Player not found by name '{playerName}'. Requesting from API..")
+            
             // If not found --> retrieve from API
             var player = await pubgClient.GetPlayer(playerName);
 
@@ -366,6 +368,8 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
             };
 
             await playerTableService.Add(pubgPlayer);
+            logger.LogInformation($"Added player '{playerName}' to storage cache.")
+            
             return pubgPlayer;
         }
 
