@@ -345,7 +345,7 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
         public async Task<PubgPlayer> GetPlayer(string playerName)
         {
-            var players = await playerTableService.Get(p => p.DisplayName == playerName);
+            var players = await playerTableService.Get(p => p.Name == playerName.ToLower());
 
             if (players != null && players.Count > 0)
                 return players[0];
