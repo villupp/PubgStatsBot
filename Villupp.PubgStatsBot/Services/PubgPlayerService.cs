@@ -16,7 +16,7 @@ public class PubgPlayerService(
 
   public async Task<PubgPlayer> GetOrCreatePubgPlayer(string playerName)
   {
-    var players = await playerTableService.Get(p => p.Name.Equals(playerName, StringComparison.CurrentCultureIgnoreCase));
+    var players = await playerTableService.Get(p => p.Name == playerName.ToLower());
 
     if (players != null && players.Count > 0)
     {
@@ -34,8 +34,6 @@ public class PubgPlayerService(
 
     var pubgPlayer = new PubgPlayer()
     {
-      RowKey = Guid.NewGuid().ToString(),
-      PartitionKey = "",
       Id = player.Id,
       Name = player.Attributes.Name.ToLower(),
       DisplayName = player.Attributes.Name
@@ -43,18 +41,29 @@ public class PubgPlayerService(
 
     // Get existing players with same ID from cache and update if found
     var existingPlayers = await playerTableService.Get(p =>
-        p.Id.Equals(player.Id, StringComparison.CurrentCultureIgnoreCase));
+        p.Id == player.Id.ToLower());
     existingPlayers = [.. existingPlayers.OrderByDescending(p => p.Timestamp)];
-    var newestExistingPlayer = existingPlayers.FirstOrDefault();
 
-    if (existingPlayers.Count > 1)
+    if (existingPlayers.Count > 0)
     {
-      await DeletePlayers(existingPlayers.Skip(1));
+      var newestExistingPlayer = existingPlayers.FirstOrDefault();
+
+      if (existingPlayers.Count > 1)
+
+        await DeletePlayers(existingPlayers.Skip(1));
+
+      newestExistingPlayer.DisplayName = playerName;
+      newestExistingPlayer.Name = playerName.ToLower();
+
+      await playerTableService.Update(newestExistingPlayer);
+      logger.LogInformation($"Updated player '{pubgPlayer.DisplayName}' ID {pubgPlayer.Id} name in storage cache.");
     }
-
-    await playerTableService.Add(pubgPlayer);
-    logger.LogInformation($"Added player '{pubgPlayer.DisplayName}' ID {pubgPlayer.Id} to storage cache.");
-
+    else
+    {
+      await playerTableService.Add(pubgPlayer);
+      logger.LogInformation($"Added player '{pubgPlayer.DisplayName}' ID {pubgPlayer.Id} to storage cache.");
+    }
+    
     return pubgPlayer;
   }
 
