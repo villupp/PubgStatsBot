@@ -13,6 +13,7 @@ using Villupp.PubgStatsBot.CommandHandlers.PubgStats;
 using Villupp.PubgStatsBot.Components;
 using Villupp.PubgStatsBot.Config;
 using Villupp.PubgStatsBot.PubgLeaderboards;
+using Villupp.PubgStatsBot.Services;
 using Villupp.PubgStatsBot.TableStorage;
 using Villupp.PubgStatsBot.TableStorage.Models;
 using Villupp.PubgStatsBot.TableStorage.Repositories;
@@ -74,6 +75,7 @@ namespace Villupp.PubgStatsBot
                 services.AddSingleton<PubgLeaderboardPoller>();
                 services.AddSingleton<AuthenticationHandler>();
                 services.AddSingleton<ButtonHandler>();
+                services.AddSingleton<PubgPlayerService>();
 
                 services.AddHttpClient<PubgApiClient>(client => { client.BaseAddress = new Uri(botSettings.PubgApiBaseUrl); })
                     .AddHttpMessageHandler<AuthenticationHandler>()

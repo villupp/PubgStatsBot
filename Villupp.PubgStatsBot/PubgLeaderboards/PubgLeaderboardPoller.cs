@@ -1,42 +1,32 @@
 using Microsoft.Extensions.Logging;
 using Villupp.PubgStatsBot.Api.Pubg;
 using Villupp.PubgStatsBot.Config;
+using Villupp.PubgStatsBot.Services;
 using Villupp.PubgStatsBot.TableStorage;
 using Villupp.PubgStatsBot.TableStorage.Models;
 using Villupp.PubgStatsBot.TableStorage.Repositories;
 
 namespace Villupp.PubgStatsBot.PubgLeaderboards
 {
-    public class PubgLeaderboardPoller
+    public class PubgLeaderboardPoller(
+        ILogger<PubgLeaderboardPoller> logger,
+        PubgApiClient pubgClient,
+        PubgStatsBotSettings botSettings,
+        PubgSeasonRepository seasonRepository,
+        TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService,
+        PubgPlayerService playerService
+        )
     {
         private const int STORAGE_REQUEST_BATCH_SIZE = 50;
 
-        private readonly ILogger<PubgLeaderboardPoller> logger;
-        private readonly PubgApiClient pubgClient;
-        private readonly PubgStatsBotSettings botSettings;
-        private PubgSeasonRepository seasonRepository;
-        private TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService;
-        private TableStorageService<PubgPlayer> playerTableService;
+        private readonly ILogger<PubgLeaderboardPoller> logger = logger;
+        private readonly PubgApiClient pubgClient = pubgClient;
+        private readonly PubgStatsBotSettings botSettings = botSettings;
+        private readonly PubgSeasonRepository seasonRepository = seasonRepository;
+        private readonly TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService = lbPlayerTableService;
+        private readonly PubgPlayerService playerService = playerService;
 
-        private bool isPollerRunning;
-
-        public PubgLeaderboardPoller(
-            ILogger<PubgLeaderboardPoller> logger,
-            PubgApiClient pubgClient,
-            PubgStatsBotSettings botSettings,
-            PubgSeasonRepository seasonRepository,
-            TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService,
-            TableStorageService<PubgPlayer> playerTableService
-            )
-        {
-            isPollerRunning = false;
-            this.logger = logger;
-            this.pubgClient = pubgClient;
-            this.botSettings = botSettings;
-            this.seasonRepository = seasonRepository;
-            this.lbPlayerTableService = lbPlayerTableService;
-            this.playerTableService = playerTableService;
-        }
+        private bool isPollerRunning = false;
 
         public async Task Start()
         {
@@ -143,36 +133,18 @@ namespace Villupp.PubgStatsBot.PubgLeaderboards
                     logger.LogInformation($"Adding {addTasks.Count} current season leaderboard players");
                     Task.WaitAll(addTasks.ToArray());
 
-                    addTasks = new List<Task>();
+                    addTasks = [];
                 }
             }
 
-            Task.WaitAll(addTasks.ToArray());
+            Task.WaitAll([.. addTasks]);
 
             logger.LogInformation($"Added {seasonLbPlayers.Count} current season leaderboard players");
 
             foreach (var player in seasonLbPlayers)
             {
                 var playerName = player.attributes.name;
-
-                var existingPubgPlayers = await playerTableService.Get(p => p.DisplayName == playerName);
-                if (existingPubgPlayers.Count > 0)
-                    continue;
-
-                logger.LogInformation($"Adding {playerName} to storage");
-
-                var pubgPlayer = new PubgPlayer()
-                {
-                    RowKey = Guid.NewGuid().ToString(),
-                    PartitionKey = "",
-                    Id = player.id,
-                    Name = playerName.ToLower(),
-                    DisplayName = playerName,
-                };
-
-                await playerTableService.Add(pubgPlayer);
-
-                logger.LogInformation($"Added {playerName} to storage");
+                await playerService.GetOrCreatePubgPlayer(playerName);
             }
 
             logger.LogInformation($"UpdateLeaderboards season {seasonId} done.");

@@ -3,28 +3,28 @@ using Microsoft.Extensions.Logging;
 using Villupp.PubgStatsBot.Api;
 using Villupp.PubgStatsBot.Api.Pubg.Models;
 using Villupp.PubgStatsBot.CommandHandlers.PubgStats;
+using Villupp.PubgStatsBot.Services;
 using Villupp.PubgStatsBot.TableStorage.Models;
 using Villupp.PubgStatsBot.TableStorage.Repositories;
 
 namespace Villupp.PubgStatsBot.Modules
 {
     [Group("pubgstats", "")]
-    public class PubgStatsModule : InteractionModuleBase<SocketInteractionContext>
+    public class PubgStatsModule(
+        ILogger<PubgStatsModule> logger,
+        PubgStatsHandler pubgStatsHandler,
+        PubgSeasonRepository seasonRepository,
+        PubgPlayerService playerService
+        ) : InteractionModuleBase<SocketInteractionContext>
     {
-        private readonly ILogger logger;
-        private PubgStatsHandler pubgStatsHandler;
-        private PubgSeasonRepository seasonRepository;
-
-        public PubgStatsModule(ILogger<PubgStatsModule> logger, PubgStatsHandler pubgStatsHandler, PubgSeasonRepository seasonRepository)
-        {
-            this.logger = logger;
-            this.pubgStatsHandler = pubgStatsHandler;
-            this.seasonRepository = seasonRepository;
-        }
+        private readonly ILogger logger = logger;
+        private readonly PubgStatsHandler pubgStatsHandler = pubgStatsHandler;
+        private readonly PubgSeasonRepository seasonRepository = seasonRepository;
+        private readonly PubgPlayerService playerService = playerService;
 
         // Posts PUBG player stats for current ongoing season
         [SlashCommand("player", "")]
-        public async Task SeasonRankedStats([Autocomplete(typeof(PlayerNameAutocompleteHandler))]string playername, bool ispublic = false, int season = -1)
+        public async Task SeasonRankedStats([Autocomplete(typeof(PlayerNameAutocompleteHandler))] string playername, bool ispublic = false, int season = -1)
         {
             logger.LogInformation($"SeasonRankedStats initiated by {Context.User.Username} for player '{playername}', season {season}");
 
@@ -44,7 +44,7 @@ namespace Villupp.PubgStatsBot.Modules
 
                 await RespondAsync($"Retrieving stats for {playername}..", ephemeral: !ispublic);
 
-                var player = await pubgStatsHandler.GetPlayer(playername);
+                var player = await playerService.GetOrCreatePubgPlayer(playername);
                 var currentSeason = await seasonRepository.GetCurrentSeason();
                 PubgSeason statsSeason = null;
 

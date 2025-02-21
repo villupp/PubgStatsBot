@@ -12,38 +12,23 @@ using Villupp.PubgStatsBot.TableStorage.Repositories;
 
 namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 {
-    public class PubgStatsHandler
+    public class PubgStatsHandler(ILogger<PubgStatsHandler> logger,
+        PubgApiClient pubgClient,
+        PubgSeasonRepository seasonRepository,
+        TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService,
+        TableStorageService<PubgSeason> seasonTableService,
+        PubgStatsBotSettings botSettings
+        )
     {
         private const string RANKTIER_NAME_MASTER = "Master";
-        private ILogger logger;
-        private PubgApiClient pubgClient;
-        private PubgSeasonRepository seasonRepository;
-        private TableStorageService<PubgPlayer> playerTableService;
-        private TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService;
-        private TableStorageService<PubgSeason> seasonTableService;
-        private PubgStatsBotSettings botSettings;
+        private ILogger logger = logger;
+        private PubgApiClient pubgClient = pubgClient;
+        private PubgSeasonRepository seasonRepository = seasonRepository;
+        private TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService = lbPlayerTableService;
+        private TableStorageService<PubgSeason> seasonTableService = seasonTableService;
+        private PubgStatsBotSettings botSettings = botSettings;
 
-        public List<PubgStatsMessage> StatsMessages { get; set; }
-
-        public PubgStatsHandler(ILogger<PubgStatsHandler> logger,
-            PubgApiClient pubgClient,
-            PubgSeasonRepository seasonRepository,
-            TableStorageService<PubgPlayer> playerTableService,
-            TableStorageService<PubgLeaderboardPlayer> lbPlayerTableService,
-            TableStorageService<PubgSeason> seasonTableService,
-            PubgStatsBotSettings botSettings
-            )
-        {
-            this.logger = logger;
-            this.pubgClient = pubgClient;
-            this.seasonRepository = seasonRepository;
-            this.playerTableService = playerTableService;
-            this.botSettings = botSettings;
-            this.lbPlayerTableService = lbPlayerTableService;
-            this.seasonTableService = seasonTableService;
-
-            StatsMessages = [];
-        }
+        public List<PubgStatsMessage> StatsMessages { get; set; } = [];
 
         public async Task<PubgStatsMessage> CreateStatsMessage(PubgPlayer player, PubgSeason season, RankedStats stats, bool isPublic)
         {
@@ -341,36 +326,6 @@ namespace Villupp.PubgStatsBot.CommandHandlers.PubgStats
 
             seasonRepository.FlushCache();
             return true;
-        }
-
-        public async Task<PubgPlayer> GetPlayer(string playerName)
-        {
-            var players = await playerTableService.Get(p => p.Name == playerName.ToLower());
-
-            if (players != null && players.Count > 0)
-                return players[0];
-
-            logger.LogInformation($"Player not found by name '{playerName}'. Requesting from API..");
-            
-            // If not found --> retrieve from API
-            var player = await pubgClient.GetPlayer(playerName);
-
-            if (player?.Attributes == null)
-                return null;
-
-            var pubgPlayer = new PubgPlayer()
-            {
-                RowKey = Guid.NewGuid().ToString(),
-                PartitionKey = "",
-                Id = player.Id,
-                Name = player.Attributes.Name.ToLower(),
-                DisplayName = player.Attributes.Name
-            };
-
-            await playerTableService.Add(pubgPlayer);
-            logger.LogInformation($"Added player '{playerName}' to storage cache.");
-            
-            return pubgPlayer;
         }
 
         public async Task<PubgLeaderboardPlayer> GetLeaderboardPlayer(string playerName, string season)

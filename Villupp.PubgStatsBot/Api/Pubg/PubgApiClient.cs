@@ -75,7 +75,7 @@ namespace Villupp.PubgStatsBot.Api.Pubg
 
         public async Task<Player> GetPlayer(string playerName)
         {
-            var players = await GetPlayers(new List<string>() { playerName });
+            var players = await GetPlayers([playerName]);
 
             if (players != null && players?.Count > 0)
                 return players[0];
