@@ -28,6 +28,9 @@ namespace Villupp.PubgStatsBot.Api.Pubg.Models
 
     public class RankedGameModeStats
     {
+        [JsonPropertyName("All")]
+        public GameModeStats All { get; set; }
+
         [JsonPropertyName("squad-fpp")]
         public GameModeStats SquadFpp { get; set; }
     }

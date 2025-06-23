@@ -6,9 +6,10 @@ using Villupp.PubgStatsBot.Config;
 
 namespace Villupp.PubgStatsBot.Api.Pubg
 {
-    public class PubgApiClient : ApiClient
+    public class PubgApiClient(ILogger<ApiClient> logger, PubgStatsBotSettings botSettings, HttpClient httpClient) : ApiClient(logger, botSettings, httpClient)
     {
-        public static readonly string[] Regions = ["pc-as",
+        public static readonly string[] Regions = [
+            "pc-as",
             "pc-eu",
             "pc-jp",
             "pc-krjp",
@@ -19,10 +20,6 @@ namespace Villupp.PubgStatsBot.Api.Pubg
             "pc-sa",
             "pc-sea"
         ];
-
-        public PubgApiClient(ILogger<ApiClient> logger, PubgStatsBotSettings botSettings, HttpClient httpClient) : base(logger, botSettings, httpClient)
-        {
-        }
 
         public async Task<MatchResponse> GetMatch(Guid matchId)
         {
