@@ -99,11 +99,14 @@ public class PubgStatsHandler(ILogger<PubgStatsHandler> logger,
         }
         var stats = seasonStats.Attributes.Stats.SquadFpp ?? seasonStats.Attributes.Stats.All;
         var kdrDisplay = "N/A";
+        var kdaDisplay = "N/A";
 
         if (stats.Deaths > 0)
         {
             decimal kdr = stats.Kills / (decimal)stats.Deaths;
             kdrDisplay = string.Format("{0:0.0#}", kdr);
+            decimal kda = (stats.Kills + stats.Assists) / (decimal)stats.Deaths;
+            kdaDisplay = string.Format("{0:0.0#}", kda);
         }
 
         // Sub tier not shown for master
@@ -131,7 +134,7 @@ public class PubgStatsHandler(ILogger<PubgStatsHandler> logger,
         statsStr += $"\nRP: **{stats.CurrentRankPoint}** (season high: **{stats.BestRankPoint}**)";
         statsStr += $"\nMatches: **{stats.RoundsPlayed}** Wins: **{stats.Wins}** (**{string.Format("{0:0.0#}", stats.WinRatio * 100)}%**)";
         statsStr += $"\nAvg placement: **#{string.Format("{0:0.0#}", stats.AvgRank)}** Top 10: **{string.Format("{0:0.0#}", stats.Top10Ratio * 100)}%**";
-        statsStr += $"\nKDR: **{kdrDisplay}** KDA: **{string.Format("{0:0.0#}", stats.Kda)}** Avg dmg: **{string.Format("{0:0}", stats.DamageDealt / stats.RoundsPlayed)}**";
+        statsStr += $"\nKDR: **{kdrDisplay}** KDA: **{kdaDisplay}** Avg dmg: **{string.Format("{0:0}", stats.DamageDealt / stats.RoundsPlayed)}**";
 
         var embedBuilder = new EmbedBuilder()
              .WithTitle(titleText)
